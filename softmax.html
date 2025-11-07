@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LLM Deep Dive – Softmax &amp; Attention Mechanisms</title>
+<style>
+  :root{
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --card: #121212;
+    --text: #ffffff;
+    --muted: #d0d0d0;
+    --accent: #00d9ff;
+    --accent-2: #00ff88;
+    --accent-3: #ff4d94;
+    --accent-4: #bb86fc;
+    --accent-5: #ffd740;
+    --warn: #ffb74d;
+    --danger: #ff5252;
+    --success: #00ff88;
+    --info: #40c4ff;
+    --radius: 16px;
+    --shadow: 0 10px 30px rgba(0,0,0,.5);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg: #f6f8fb;
+      --surface:#ffffff;
+      --card: #ffffff;
+      --text: #0b1220;
+      --muted: #3e4a5a;
+      --accent: #0077ff;
+      --accent-2: #0bab7c;
+      --accent-3: #f72585;
+      --accent-4: #7209b7;
+      --accent-5: #ffd60a;
+      --success: #06d68a;
+      --info: #4895ef;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+  }
+  html,body{height:100%}
+  body{
+    margin:0;
+    background: var(--bg);
+    color:var(--text);
+    font: 18px/1.8 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .container{
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  .card p, .card li{
+    line-height: 1.9;
+    font-size: 18px;
+  }
+  header{
+    display:grid;
+    gap:12px;
+    margin-bottom: 24px;
+  }
+  h1{
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.2;
+    letter-spacing:-0.02em;
+    margin: 0;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .subtitle{
+    color: var(--muted);
+    font-size: clamp(18px, 2.5vw, 20px);
+    line-height: 1.6;
+  }
+  .grid{
+    display:grid;
+    gap: 24px;
+    grid-template-columns: repeat(12, 1fr);
+  }
+  .card{
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    border: 1px solid rgba(255,255,255,.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    opacity: 0.8;
+  }
+  .card:nth-child(2)::before{ background: linear-gradient(90deg, var(--accent-2), var(--accent-3)); }
+  .card:nth-child(3)::before{ background: linear-gradient(90deg, var(--accent-3), var(--accent-4)); }
+  .card:nth-child(4)::before{ background: linear-gradient(90deg, var(--accent-4), var(--accent)); }
+  .card:nth-child(5)::before{ background: linear-gradient(90deg, var(--accent), var(--accent-5)); }
+  .card:nth-child(6)::before{ background: linear-gradient(90deg, var(--accent-5), var(--accent-2)); }
+  .card:nth-child(7)::before{ background: linear-gradient(90deg, var(--accent-2), var(--info)); }
+  .card:nth-child(8)::before{ background: linear-gradient(90deg, var(--info), var(--accent-3)); }
+  .card:nth-child(9)::before{ background: linear-gradient(90deg, var(--accent-3), var(--success)); }
+  .card:nth-child(10)::before{ background: linear-gradient(90deg, var(--success), var(--accent)); }
+  .card h2{
+    margin-top: 0;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .card h3{
+    color: var(--accent-2);
+    font-weight: 600;
+    font-size: 22px;
+    margin-top: 28px;
+    margin-bottom: 16px;
+  }
+  .span-12{grid-column: span 12}
+  .span-8{grid-column: span 8}
+  .span-4{grid-column: span 4}
+  .span-6{grid-column: span 6}
+  @media (max-width: 980px){
+    .span-8,.span-6{grid-column: span 12}
+    .span-4{grid-column: span 12}
+  }
+  /* Single column layout for better readability */
+  .single-col .span-8, .single-col .span-6, .single-col .span-4, .single-col .span-12{
+    grid-column: span 12;
+  }
+  code, pre{
+    font-family: var(--mono);
+    background: #1a1a1a;
+    color: var(--accent-5);
+    border: 2px solid var(--accent);
+  }
+  code{
+    padding: .3em .5em;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  pre{
+    overflow:auto;
+    padding: 24px;
+    border-radius: 14px;
+    border-left: 5px solid var(--accent);
+    background: #0d0d0d;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  pre code{
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-weight: 400;
+  }
+  .kpi{
+    display:flex; gap:14px; align-items:center;
+    padding:20px; border-radius:14px;
+    background: #0d0d0d;
+    border: 3px solid var(--accent-2);
+    box-shadow: 0 4px 12px rgba(0,255,136,.3);
+  }
+  .kpi strong{
+    font-size: 24px;
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+  .kpi div{
+    color: #ffffff;
+    font-size: 18px;
+  }
+  .badge{
+    display:inline-block;
+    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #000000;
+    color: var(--accent-5);
+    font-weight: 700;
+    vertical-align: middle;
+    border: 2px solid var(--accent-5);
+    box-shadow: 0 2px 8px rgba(255,215,64,.5);
+  }
+  .note{
+    border-left: 5px solid var(--accent);
+    padding: 20px 24px;
+    background: #0d0d0d;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,217,255,.3);
+    border-right: 2px solid var(--accent);
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    font-size: 18px;
+    color: #ffffff;
+  }
+  .note strong{
+    color: var(--accent-2);
+    font-size: 20px;
+  }
+  .warn{
+    border-left: 5px solid var(--danger);
+    padding: 20px 24px;
+    background: #0d0d0d;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(255,82,82,.3);
+    border-right: 2px solid var(--danger);
+    border-top: 2px solid var(--danger);
+    border-bottom: 2px solid var(--danger);
+    font-size: 18px;
+    color: #ffffff;
+  }
+  .warn strong{
+    color: var(--danger);
+    font-size: 20px;
+  }
+  .list-check{
+    list-style:none; padding-left:0;
+  }
+  .list-check li{
+    margin: 8px 0;
+    padding-left: 28px;
+    position: relative;
+  }
+  .list-check li::before{
+    content: "✓";
+    position:absolute;
+    left:0;
+    top:0;
+    color: var(--accent-5);
+    font-weight:700;
+    font-size: 20px;
+  }
+  .muted{
+    color:var(--muted);
+    font-size: 17px;
+  }
+  footer{margin-top: 40px; color: var(--muted); font-size: 16px}
+  .pill{
+    display:inline-flex;
+    gap:10px;
+    align-items:center;
+    padding:10px 18px;
+    background: #0d0d0d;
+    border-radius:999px;
+    border:2px solid var(--accent);
+    box-shadow: 0 4px 12px rgba(0,217,255,.4);
+  }
+  .pill strong{
+    color: #ffffff;
+    font-size: 16px;
+  }
+  .controls{ display:flex; flex-wrap:wrap; gap:12px; margin-top:10px }
+  .controls input, .controls select, .controls button, .controls textarea{
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: 14px var(--sans);
+    outline: none;
+  }
+  .controls button{
+    cursor:pointer; transition: transform .05s ease, filter .2s ease; font-weight:600;
+  }
+  .controls button:hover{ filter: brightness(1.05) }
+  .controls button:active{ transform: translateY(1px) }
+  .btn-primary{ background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #001b2e; border:none }
+  .btn-neutral{ background: var(--card) }
+  .kbd{
+    font-family:var(--mono);
+    font-size:14px;
+    padding:.4em .6em;
+    border:2px solid var(--accent-5);
+    border-radius:6px;
+    background: #0d0d0d;
+    color: var(--accent-5);
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(255,215,64,.4);
+  }
+  .table{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--accent);
+  }
+  .table th, .table td{
+    padding: 16px 20px;
+    border-bottom: 2px solid rgba(255,255,255,.3);
+  }
+  .table th{
+    text-align:left;
+    background: #0d0d0d;
+    color: var(--accent-5);
+    font-weight: 700;
+    font-size: 20px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .table tr:hover{
+    background: #1a1a1a;
+  }
+  .table td{
+    color: #ffffff;
+    font-size: 17px;
+  }
+  .table tbody tr{
+    background: #050505;
+  }
+  .flex{ display:flex; gap: 16px; flex-wrap: wrap; align-items: center }
+  .mono{
+    font-family: var(--mono);
+    color: var(--accent-5);
+  }
+  .center{ text-align:center }
+  strong{
+    font-weight: 700;
+    color: var(--text);
+  }
+  em{
+    color: var(--accent-5);
+    font-style: italic;
+    font-weight: 600;
+  }
+  /* Keyboard navigation focus styles */
+  button:focus, input:focus, select:focus, textarea:focus{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  /* Navigation & Landing Page Styles */
+  .page-section{
+    display: none;
+  }
+  .page-section.active{
+    display: block;
+  }
+  .landing-page{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .landing-title{
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2), var(--accent-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .landing-subtitle{
+    font-size: clamp(18px, 2.5vw, 24px);
+    color: var(--muted);
+    margin-bottom: 60px;
+    text-align: center;
+    max-width: 800px;
+  }
+  .button-container{
+    display: grid;
+    gap: 30px;
+    width: 100%;
+    max-width: 900px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  .huge-button{
+    position: relative;
+    padding: 60px 40px;
+    background: var(--card);
+    border: 3px solid var(--accent);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .huge-button::before{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    opacity: 0.9;
+  }
+  .huge-button:nth-child(2)::before{
+    background: linear-gradient(90deg, var(--accent-2), var(--accent-3));
+  }
+  .huge-button:hover{
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,217,255,.4);
+    border-color: var(--accent-2);
+  }
+  .huge-button:active{
+    transform: translateY(-4px);
+  }
+  .huge-button-icon{
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .huge-button-title{
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .huge-button-desc{
+    font-size: 18px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .home-button{
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #001b2e;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,217,255,.4);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    font-family: var(--sans);
+  }
+  .home-button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,217,255,.6);
+  }
+  .home-button:active{
+    transform: translateY(0);
+  }
+  .home-button::before{
+    content: '← ';
+    font-size: 20px;
+  }
+  .in-progress{
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .in-progress-icon{
+    font-size: 120px;
+    margin-bottom: 30px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+  .in-progress-title{
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--accent-3), var(--accent-4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .in-progress-text{
+    font-size: 24px;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  details{
+    cursor: pointer;
+    padding: 16px 0;
+  }
+  details summary{
+    padding: 16px 20px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border-left: 5px solid var(--accent);
+    border: 3px solid var(--accent);
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    list-style: none;
+  }
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  details summary::before {
+    content: '▶ ';
+    display: inline-block;
+    transition: transform 0.2s ease;
+    color: var(--accent-2);
+    font-size: 16px;
+    margin-right: 8px;
+  }
+  details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  details summary:hover{
+    background: #2a2a2a;
+    border-color: var(--accent-2);
+  }
+  details summary:focus{
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  details[open] summary{
+    margin-bottom: 20px;
+    background: #2a2a2a;
+    border-color: var(--accent-2);
+  }
+  details .details-content{
+    padding: 20px;
+    background: #0d0d0d;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,.1);
+  }
+  details .details-content p, details .details-content pre{
+    color: #ffffff;
+  }
+
+  /* Attention Animation Styles */
+  .animation-toggle-btn {
+    display: block;
+    margin: 30px auto;
+    padding: 20px 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #001b2e;
+    box-shadow: 0 6px 25px rgba(0,217,255,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .animation-toggle-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,217,255,0.6);
+  }
+  .animation-toggle-btn:active {
+    transform: translateY(-1px);
+  }
+  .animation-toggle-btn::before {
+    content: '▼';
+    margin-right: 10px;
+    display: inline-block;
+    transition: transform 0.3s ease;
+  }
+  .animation-toggle-btn.active::before {
+    transform: rotate(180deg);
+  }
+  .attention-animation-container {
+    display: none;
+    animation: slideDown 0.5s ease-out;
+    margin-top: 30px;
+  }
+  .attention-animation-container.show {
+    display: block;
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .anim-sentence {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--accent-2);
+    margin-bottom: 40px;
+    padding: 20px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-radius: 10px;
+    border: 2px solid var(--accent);
+  }
+  .anim-tokens-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .anim-token {
+    padding: 15px 25px;
+    background: #1a1a1a;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    color: #ffffff;
+  }
+  .anim-token.selected {
+    background: var(--accent);
+    color: #001b2e;
+    transform: scale(1.1);
+    box-shadow: 0 5px 20px rgba(0,217,255,0.4);
+  }
+  .anim-token.attending {
+    background: var(--accent-5);
+    border-color: var(--accent-3);
+    animation: pulse 1s ease-in-out infinite;
+    color: #001b2e;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .anim-vectors-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin: 40px 0;
+  }
+  @media (max-width: 980px) {
+    .anim-vectors-section {
+      grid-template-columns: 1fr;
+    }
+  }
+  .anim-vector-box {
+    background: #1a1a1a;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+  }
+  .anim-vector-box.query { border: 3px solid #4ecdc4; }
+  .anim-vector-box.key { border: 3px solid #ff6b6b; }
+  .anim-vector-box.value { border: 3px solid #95e1d3; }
+  .anim-vector-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .anim-vector-box.query .anim-vector-title {
+    background: #4ecdc4;
+    color: #001b2e;
+  }
+  .anim-vector-box.key .anim-vector-title {
+    background: #ff6b6b;
+    color: white;
+  }
+  .anim-vector-box.value .anim-vector-title {
+    background: #95e1d3;
+    color: #001b2e;
+  }
+  .anim-vector-values {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  .anim-vector-value {
+    padding: 8px;
+    background: #0d0d0d;
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    color: #ffffff;
+  }
+  .anim-attention-scores {
+    margin: 40px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-radius: 15px;
+    border: 2px solid var(--accent-5);
+  }
+  .anim-attention-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+  .anim-score-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .anim-score-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .anim-score-label {
+    min-width: 120px;
+    font-weight: bold;
+    color: #ffffff;
+  }
+  .anim-score-bar-container {
+    flex: 1;
+    height: 30px;
+    background: #0d0d0d;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .anim-score-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    color: #001b2e;
+    font-weight: bold;
+  }
+  .anim-output-section {
+    margin: 40px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-radius: 15px;
+    border: 2px solid var(--accent-2);
+  }
+  .anim-output-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+  .anim-output-vector {
+    background: #0d0d0d;
+    padding: 20px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    color: #ffffff;
+  }
+  .anim-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+  }
+  .anim-controls button {
+    padding: 15px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, var(--accent-3), var(--accent-4));
+    color: white;
+    box-shadow: 0 4px 15px rgba(255,77,148,0.3);
+  }
+  .anim-controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255,77,148,0.5);
+  }
+  .anim-controls button:active {
+    transform: translateY(0);
+  }
+  .anim-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .anim-step-indicator {
+    text-align: center;
+    font-size: 1.2em;
+    margin: 20px 0;
+    padding: 15px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    font-weight: bold;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+  }
+  .anim-formula {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: #0d0d0d;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 1.1em;
+    border: 2px solid var(--accent);
+    color: #ffffff;
+  }
+  .anim-explanation {
+    text-align: center;
+    margin: 15px 0;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 10px;
+    color: var(--accent-5);
+    line-height: 1.6;
+    border: 2px solid var(--accent-5);
+  }
+  .anim-arrow {
+    text-align: center;
+    font-size: 2em;
+    color: var(--accent);
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+  <!-- Landing Page -->
+  <section id="landing" class="page-section active">
+    <div class="landing-page">
+      <h1 class="landing-title">LLM Deep Dive</h1>
+      <p class="landing-subtitle">Entdecken Sie die fundamentalen Konzepte hinter Large Language Models – von mathematischen Grundlagen bis zu praktischen Implementierungen</p>
+
+      <div class="button-container">
+        <div class="huge-button" onclick="navigateTo('attention')" tabindex="0" role="button" aria-label="Attention is All You Need Sektion öffnen">
+          <span class="huge-button-icon">🎯</span>
+          <div class="huge-button-title">Attention is All You Need</div>
+          <div class="huge-button-desc">Transformer-Architektur und Self-Attention-Mechanismus verstehen</div>
+        </div>
+
+        <div class="huge-button" onclick="navigateTo('softmax')" tabindex="0" role="button" aria-label="Softmax Sektion öffnen">
+          <span class="huge-button-icon">📐</span>
+          <div class="huge-button-title">Softmax</div>
+          <div class="huge-button-desc">Die fundamentale Funktion für Wahrscheinlichkeitsverteilungen in LLMs</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Attention is All You Need Section -->
+  <section id="attention" class="page-section">
+    <button class="home-button" onclick="navigateTo('landing')">Home</button>
+    <div class="container">
+      <header>
+        <div class="pill">🎯 <strong>Attention-Mechanismus</strong> <span class="badge">Transformer-Kern</span></div>
+        <h1>Attention is All You Need</h1>
+        <div class="subtitle">Self-Attention verstehen anhand des Beispiels: "Welche Farbe hat der Himmel?" – Query, Key und Value Vektoren einfach erklärt.</div>
+      </header>
+
+      <section class="grid single-col">
+        <article class="card span-12">
+          <h2>🎯 Was ist Attention?</h2>
+          <p>Der <strong>Attention-Mechanismus</strong> ermöglicht es einem Modell, sich auf relevante Teile der Eingabe zu konzentrieren. Statt jedes Wort isoliert zu betrachten, lernt das Modell, <em>welche Wörter für welche anderen Wörter wichtig sind</em>.</p>
+
+          <div class="note" style="margin-top:16px">
+            <strong>Kernidee:</strong> Wenn das Modell das Wort "Himmel" verarbeitet, sollte es stark auf relevante Wörter wie "blau" achten (wenn vorhanden) und weniger auf irrelevante Wörter. Attention berechnet automatisch diese Relevanz-Gewichte.
+          </div>
+
+          <h3>Die drei magischen Vektoren: Q, K, V</h3>
+          <ul class="list-check">
+            <li><strong>Q (Query / Abfrage):</strong> "Wonach suche ich?" – Das aktuelle Wort fragt nach relevanten Informationen</li>
+            <li><strong>K (Key / Schlüssel):</strong> "Was kann ich anbieten?" – Jedes Wort beschreibt seinen Inhalt</li>
+            <li><strong>V (Value / Wert):</strong> "Was ist meine tatsächliche Information?" – Der eigentliche Inhalt, den ein Wort beiträgt</li>
+          </ul>
+        </article>
+
+        <article class="card span-12">
+          <h2>📖 Beispiel: "Welche Farbe hat der Himmel?"</h2>
+
+          <div class="kpi" style="margin-bottom: 24px">
+            <strong style="font-size:28px">🔍</strong>
+            <div>Szenario: Das Modell verarbeitet das Wort <span class="mono" style="color:var(--accent-2)">"Himmel"</span> und möchte verstehen, welche anderen Wörter relevant sind.</div>
+          </div>
+
+          <h3>Schritt 1: Token-Embeddings erstellen</h3>
+          <p>Jedes Wort wird zunächst in einen Vektor umgewandelt (vereinfacht als 3D-Vektor dargestellt):</p>
+
+          <table class="table">
+            <thead>
+              <tr><th>Token</th><th>Embedding (vereinfacht)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">Welche</td><td class="mono">[0.2, -0.5, 0.8]</td></tr>
+              <tr><td class="mono">Farbe</td><td class="mono">[0.6, 0.3, -0.2]</td></tr>
+              <tr><td class="mono">hat</td><td class="mono">[-0.1, 0.0, 0.4]</td></tr>
+              <tr><td class="mono">der</td><td class="mono">[0.1, -0.2, 0.3]</td></tr>
+              <tr><td class="mono">Himmel</td><td class="mono">[0.9, 0.7, 0.5]</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Schritt 2: Q, K, V Matrizen berechnen</h3>
+          <p>Durch Multiplikation mit gelernten Gewichtsmatrizen <code>W<sub>Q</sub></code>, <code>W<sub>K</sub></code>, <code>W<sub>V</sub></code> entstehen:</p>
+
+          <div class="center" style="font-size:20px; margin:24px 0; padding:24px; background:#1a1a1a; border-radius:14px; border:3px solid var(--accent-2)">
+            <div style="margin-bottom:12px; color:#ffffff"><span style="color:var(--accent-5); font-weight:700; font-size:24px">Q</span> <span style="font-weight:600">= Embedding × W<sub style="color:var(--accent-5)">Q</sub></span></div>
+            <div style="margin-bottom:12px; color:#ffffff"><span style="color:var(--accent-3); font-weight:700; font-size:24px">K</span> <span style="font-weight:600">= Embedding × W<sub style="color:var(--accent-3)">K</sub></span></div>
+            <div style="color:#ffffff"><span style="color:var(--accent-2); font-weight:700; font-size:24px">V</span> <span style="font-weight:600">= Embedding × W<sub style="color:var(--accent-2)">V</sub></span></div>
+          </div>
+
+          <p class="muted">In der Praxis haben diese Vektoren oft 64, 128 oder mehr Dimensionen. Für unser Beispiel bleiben wir bei 3D.</p>
+
+          <h3>Schritt 3: Attention Scores berechnen (für "Himmel")</h3>
+          <p>Das Wort <strong>"Himmel"</strong> erstellt seine Query <code>Q<sub>Himmel</sub></code> und vergleicht sie mit allen Keys:</p>
+
+<pre><code class="language-pseudo">Fokus auf: "Himmel" (Position 4)
+
+Q_Himmel = [1.2, 0.9, 0.6]  # Query von "Himmel"
+
+# Skalarprodukt mit allen Keys (Ähnlichkeit messen):
+Score("Himmel" → "Welche") = Q_Himmel · K_Welche = 1.2×0.3 + 0.9×(-0.2) + 0.6×0.5 = 0.48
+Score("Himmel" → "Farbe")  = Q_Himmel · K_Farbe  = 1.2×0.8 + 0.9×0.4  + 0.6×0.1 = 1.38
+Score("Himmel" → "hat")    = Q_Himmel · K_hat    = 1.2×0.0 + 0.9×0.1  + 0.6×0.2 = 0.21
+Score("Himmel" → "der")    = Q_Himmel · K_der    = 1.2×0.2 + 0.9×0.0  + 0.6×0.1 = 0.30
+Score("Himmel" → "Himmel") = Q_Himmel · K_Himmel = 1.2×1.0 + 0.9×0.8  + 0.6×0.7 = 2.34
+</code></pre>
+
+          <div class="note" style="margin-top:16px">
+            <strong>Interpretation:</strong> Hohe Scores bedeuten hohe Relevanz! "Himmel" achtet am meisten auf sich selbst (2.34) und auf "Farbe" (1.38).
+          </div>
+        </article>
+
+        <article class="card span-12" style="background:linear-gradient(135deg, rgba(187,134,252,0.1) 0%, rgba(187,134,252,0.05) 100%); border:3px solid var(--accent-4); box-shadow: 0 0 30px rgba(187,134,252,0.2)">
+          <h2 style="color:var(--accent-4); font-size:32px; margin-bottom:16px">📐 Das Skalarprodukt – Einfach erklärt</h2>
+          <p style="color:var(--text); font-size:19px; line-height:1.8">Das <strong style="color:var(--accent-4)">Skalarprodukt</strong> (auch Punktprodukt genannt) multipliziert zwei Vektoren und liefert eine einzelne Zahl (Skalar) als Ergebnis. Es misst, wie ähnlich zwei Vektoren sind.</p>
+
+          <h3 style="color:var(--accent-2); font-size:26px; margin-top:32px">🎯 Formel für 3D-Vektoren</h3>
+          <div class="center" style="background:#0d1117; padding:28px; border-radius:12px; margin:24px 0; border:3px solid var(--accent-4)">
+            <span style="color:var(--accent-4); font-weight:700; font-size:26px">a · b = </span>
+            <span style="color:#ffffff; font-weight:600; font-size:24px">a₁ × b₁ + a₂ × b₂ + a₃ × b₃</span>
+          </div>
+
+          <h3 style="color:var(--accent-2); font-size:26px; margin-top:32px">📊 Beispiel: 3D-Vektoren</h3>
+          <p style="color:var(--text); font-size:19px">Gegeben sind zwei 3D-Vektoren:</p>
+
+<pre><code class="language-pseudo">a = (2, 3, 1)
+b = (4, -1, 5)
+</code></pre>
+
+          <h3 style="color:var(--accent-2); font-size:26px; margin-top:32px">🔢 Berechnung Schritt für Schritt</h3>
+          <div style="background:#1a1a1a; padding:24px; border-radius:12px; border-left:6px solid var(--accent-4)">
+            <ol style="line-height:2.2; font-size:19px; color:var(--text)">
+              <li><strong style="color:#ffffff">Multipliziere die x-Komponenten:</strong> <code style="color:var(--accent-2); font-size:20px; background:#0a0a0a; padding:4px 8px; border-radius:4px">2 × 4 = 8</code></li>
+              <li><strong style="color:#ffffff">Multipliziere die y-Komponenten:</strong> <code style="color:var(--accent-3); font-size:20px; background:#0a0a0a; padding:4px 8px; border-radius:4px">3 × (-1) = -3</code></li>
+              <li><strong style="color:#ffffff">Multipliziere die z-Komponenten:</strong> <code style="color:var(--accent-5); font-size:20px; background:#0a0a0a; padding:4px 8px; border-radius:4px">1 × 5 = 5</code></li>
+              <li><strong style="color:#ffffff">Addiere alle Ergebnisse:</strong> <code style="color:var(--accent); font-size:20px; background:#0a0a0a; padding:4px 8px; border-radius:4px">8 + (-3) + 5 = 10</code></li>
+            </ol>
+          </div>
+
+<pre style="margin-top:20px"><code class="language-pseudo">a · b = a₁ × b₁ + a₂ × b₂ + a₃ × b₃
+      = 2 × 4 + 3 × (-1) + 1 × 5
+      = 8 + (-3) + 5
+      = 10
+</code></pre>
+
+          <div class="kpi" style="margin-top:24px; background:rgba(187,134,252,.15); border:2px solid var(--accent-4)">
+            <strong style="color:var(--accent-4)">Ergebnis: 10</strong>
+            <div style="color:var(--muted)">Das Skalarprodukt ist eine einzelne Zahl, die die Ähnlichkeit der beiden Vektoren quantifiziert</div>
+          </div>
+
+          <div class="note" style="margin-top:32px; border-left:6px solid var(--accent-4); background:rgba(187,134,252,0.1); padding:20px">
+            <strong style="color:var(--accent-4); font-size:20px">💡 Warum ist das wichtig für Attention?</strong>
+            <p style="color:var(--text); margin-top:12px; font-size:18px; line-height:1.8">Im Attention-Mechanismus nutzen wir das Skalarprodukt zwischen Query- und Key-Vektoren, um zu messen, wie relevant ein Wort für ein anderes ist. Ein hohes Skalarprodukt = hohe Ähnlichkeit = hohe Relevanz!</p>
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <h2>🧮 Die Attention-Formel</h2>
+
+          <div class="center" style="font-size:28px; margin:32px 0; font-family:var(--sans); padding:32px; background:#1a1a1a; border-radius:16px; border:4px solid var(--accent); box-shadow: 0 8px 24px rgba(0,217,255,.4)">
+            <div style="margin-bottom:16px; color:var(--accent-5); font-size:24px; font-weight:600">Skaliertes Skalarprodukt-Attention</div>
+            <span style="color:#ffffff; font-weight:700">Attention(Q, K, V) = </span>
+            <span style="color:var(--accent-2); font-weight:700">softmax</span>
+            <span style="color:#ffffff; font-weight:700">(</span>
+            <span style="display:inline-block; text-align:center; margin:0 8px">
+              <div style="padding-bottom:8px; color:#ffffff; font-weight:700">QK<sup style="font-size:20px">T</sup></div>
+              <div style="border-top:4px solid var(--accent-5); padding-top:8px; color:var(--accent-5); font-weight:700">√d<sub style="font-size:18px">k</sub></div>
+            </span>
+            <span style="color:#ffffff; font-weight:700">) V</span>
+          </div>
+
+          <h3>Schritt 4: Skalierung durch √d<sub>k</sub></h3>
+          <p>Um zu verhindern, dass die Scores zu groß werden, teilen wir durch die Wurzel der Dimensionalität:</p>
+
+<pre><code class="language-pseudo">d_k = 3  # Dimension der Key-Vektoren
+sqrt(d_k) = 1.732
+
+Skalierte Scores:
+0.48 / 1.732 = 0.277
+1.38 / 1.732 = 0.797
+0.21 / 1.732 = 0.121
+0.30 / 1.732 = 0.173
+2.34 / 1.732 = 1.351
+</code></pre>
+
+          <h3>Schritt 5: Softmax anwenden</h3>
+          <p>Die skalierten Scores werden durch <strong>Softmax</strong> in Wahrscheinlichkeiten umgewandelt:</p>
+
+<pre><code class="language-pseudo">Attention Weights = softmax([0.277, 0.797, 0.121, 0.173, 1.351])
+
+Ergebnis:
+α("Himmel" → "Welche") = 0.095  (9.5%)
+α("Himmel" → "Farbe")  = 0.163  (16.3%)
+α("Himmel" → "hat")    = 0.082  (8.2%)
+α("Himmel" → "der")    = 0.086  (8.6%)
+α("Himmel" → "Himmel") = 0.574  (57.4%)  ← Höchste Attention!
+
+Summe = 1.000 ✓
+</code></pre>
+
+          <div class="kpi" style="margin-top:20px">
+            <strong>57.4%</strong>
+            <div>Das Wort "Himmel" fokussiert zu 57.4% auf sich selbst und zu 16.3% auf "Farbe"</div>
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <h2>🎨 Schritt 6: Gewichtete Summe der Values</h2>
+          <p>Die Attention Weights werden genutzt, um die Value-Vektoren zu kombinieren:</p>
+
+<pre><code class="language-pseudo">V_Welche = [0.4, 0.2, -0.1]
+V_Farbe  = [0.9, 0.6,  0.3]
+V_hat    = [0.1, 0.0,  0.2]
+V_der    = [0.2, 0.1,  0.1]
+V_Himmel = [1.1, 0.9,  0.7]
+
+Output_Himmel = 0.095×V_Welche + 0.163×V_Farbe + 0.082×V_hat
+              + 0.086×V_der    + 0.574×V_Himmel
+
+              = 0.095×[0.4,0.2,-0.1] + 0.163×[0.9,0.6,0.3]
+              + 0.082×[0.1,0.0,0.2]  + 0.086×[0.2,0.1,0.1]
+              + 0.574×[1.1,0.9,0.7]
+
+              = [0.038,0.019,-0.010] + [0.147,0.098,0.049]
+              + [0.008,0.000,0.016]  + [0.017,0.009,0.009]
+              + [0.631,0.517,0.402]
+
+Output_Himmel = [0.841, 0.643, 0.466]
+</code></pre>
+
+          <div class="note">
+            <strong>Ergebnis:</strong> Der neue Vektor für "Himmel" ist eine gewichtete Mischung aller Wörter im Satz, wobei "Himmel" selbst und "Farbe" den größten Einfluss haben. Dieser Vektor enthält jetzt <em>kontextuelle Information</em>!
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <h2>🔄 Visualisierung der Attention Matrix</h2>
+          <p>Für alle Wörter gleichzeitig ergibt sich eine Attention-Matrix:</p>
+
+          <div style="overflow-x:auto; margin:20px 0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Query ↓ \ Key →</th>
+                  <th>Welche</th>
+                  <th>Farbe</th>
+                  <th>hat</th>
+                  <th>der</th>
+                  <th>Himmel</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Welche</strong></td>
+                  <td style="background:rgba(0,217,255,0.3)">0.45</td>
+                  <td style="background:rgba(0,217,255,0.2)">0.18</td>
+                  <td style="background:rgba(0,217,255,0.1)">0.12</td>
+                  <td style="background:rgba(0,217,255,0.1)">0.10</td>
+                  <td style="background:rgba(0,217,255,0.2)">0.15</td>
+                </tr>
+                <tr>
+                  <td><strong>Farbe</strong></td>
+                  <td style="background:rgba(0,255,136,0.1)">0.08</td>
+                  <td style="background:rgba(0,255,136,0.4)">0.52</td>
+                  <td style="background:rgba(0,255,136,0.1)">0.09</td>
+                  <td style="background:rgba(0,255,136,0.1)">0.11</td>
+                  <td style="background:rgba(0,255,136,0.3)">0.20</td>
+                </tr>
+                <tr>
+                  <td><strong>hat</strong></td>
+                  <td style="background:rgba(255,77,148,0.2)">0.22</td>
+                  <td style="background:rgba(255,77,148,0.2)">0.18</td>
+                  <td style="background:rgba(255,77,148,0.3)">0.35</td>
+                  <td style="background:rgba(255,77,148,0.1)">0.15</td>
+                  <td style="background:rgba(255,77,148,0.1)">0.10</td>
+                </tr>
+                <tr>
+                  <td><strong>der</strong></td>
+                  <td style="background:rgba(187,134,252,0.1)">0.14</td>
+                  <td style="background:rgba(187,134,252,0.1)">0.12</td>
+                  <td style="background:rgba(187,134,252,0.2)">0.18</td>
+                  <td style="background:rgba(187,134,252,0.3)">0.31</td>
+                  <td style="background:rgba(187,134,252,0.3)">0.25</td>
+                </tr>
+                <tr>
+                  <td><strong>Himmel</strong></td>
+                  <td style="background:rgba(255,215,64,0.1)">0.10</td>
+                  <td style="background:rgba(255,215,64,0.2)">0.16</td>
+                  <td style="background:rgba(255,215,64,0.1)">0.08</td>
+                  <td style="background:rgba(255,215,64,0.1)">0.09</td>
+                  <td style="background:rgba(255,215,64,0.6)">0.57</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="muted">Jede Zeile zeigt, worauf ein Query-Wort achtet. Hellere Zellen = höhere Attention. Die letzte Zeile ist unser "Himmel"-Beispiel!</p>
+        </article>
+
+        <article class="card span-12">
+          <h2>🧠 Warum funktioniert das?</h2>
+
+          <div class="flex" style="flex-direction:column; gap:20px">
+            <div class="note">
+              <strong>1. Semantische Ähnlichkeit:</strong> Durch das Training lernen Q und K, semantisch verwandte Wörter hoch zu bewerten. "Himmel" und "Farbe" haben einen hohen Score, weil sie thematisch zusammengehören.
+            </div>
+
+            <div class="note" style="border-left-color:var(--accent-2)">
+              <strong>2. Kontextverständnis:</strong> Jedes Wort erhält eine neue Repräsentation, die Information aus dem gesamten Kontext integriert. "Himmel" weiß jetzt, dass es um eine Frage nach Farbe geht.
+            </div>
+
+            <div class="note" style="border-left-color:var(--accent-3)">
+              <strong>3. Differenzierbarkeit:</strong> Alle Operationen (Matrixmultiplikation, Softmax) sind differenzierbar → das Modell kann via Backpropagation lernen, welche Attention-Muster nützlich sind.
+            </div>
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <h2>🚀 Multi-Head Attention</h2>
+          <p>Transformers verwenden nicht nur <em>eine</em> Attention, sondern <strong>mehrere parallel</strong> (z.B. 8 oder 12 "Heads"):</p>
+
+          <ul class="list-check">
+            <li><strong>Head 1:</strong> Könnte syntaktische Beziehungen lernen (Subjekt-Verb)</li>
+            <li><strong>Head 2:</strong> Könnte semantische Beziehungen lernen (Adjektiv-Nomen)</li>
+            <li><strong>Head 3:</strong> Könnte Langstrecken-Abhängigkeiten erfassen</li>
+            <li><strong>Head 4-8:</strong> Weitere spezialisierte Muster...</li>
+          </ul>
+
+<pre><code class="language-pseudo">MultiHead(Q,K,V) = Concat(head₁, head₂, ..., headₕ) × W^O
+
+wobei head_i = Attention(Q×W^Q_i, K×W^K_i, V×W^V_i)
+</code></pre>
+
+          <div class="kpi" style="margin-top:20px">
+            <strong>8-12 Heads</strong>
+            <div>Typische Transformer-Modelle nutzen 8-12 parallele Attention-Mechanismen pro Layer</div>
+          </div>
+        </article>
+
+        <article class="card span-12">
+          <h2>💡 Zusammenfassung</h2>
+
+          <table class="table">
+            <thead>
+              <tr><th>Konzept</th><th>Funktion</th><th>Analogie</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color:var(--accent-5)">Query (Q)</strong></td>
+                <td>Was suche ich?</td>
+                <td>Suchanfrage in einer Datenbank</td>
+              </tr>
+              <tr>
+                <td><strong style="color:var(--accent-3)">Key (K)</strong></td>
+                <td>Was biete ich an?</td>
+                <td>Index/Schlagwörter in der Datenbank</td>
+              </tr>
+              <tr>
+                <td><strong style="color:var(--accent-2)">Value (V)</strong></td>
+                <td>Mein eigentlicher Inhalt</td>
+                <td>Die gespeicherten Daten selbst</td>
+              </tr>
+              <tr>
+                <td><strong>QK<sup>T</sup></strong></td>
+                <td>Relevanz-Scores</td>
+                <td>Matching-Score der Suchergebnisse</td>
+              </tr>
+              <tr>
+                <td><strong>Softmax</strong></td>
+                <td>Normalisierung zu Wahrscheinlichkeiten</td>
+                <td>Ranking der Suchergebnisse (0-100%)</td>
+              </tr>
+              <tr>
+                <td><strong>Softmax × V</strong></td>
+                <td>Gewichtete Kombination</td>
+                <td>Zusammenfassung der Top-Ergebnisse</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="card span-12">
+          <h2>🐍 Code-Beispiel (PyTorch)</h2>
+<pre><code class="language-py">import torch
+import torch.nn.functional as F
+
+# Eingabe: 5 Tokens, Embedding-Dimension 512
+batch_size, seq_len, d_model = 1, 5, 512
+d_k = d_model // 8  # 64 pro Head (8 Heads)
+
+# Embeddings für "Welche Farbe hat der Himmel?"
+x = torch.randn(batch_size, seq_len, d_model)
+
+# Lernbare Gewichtsmatrizen
+W_Q = torch.randn(d_model, d_k)
+W_K = torch.randn(d_model, d_k)
+W_V = torch.randn(d_model, d_k)
+
+# 1) Q, K, V berechnen
+Q = x @ W_Q  # [1, 5, 64]
+K = x @ W_K  # [1, 5, 64]
+V = x @ W_V  # [1, 5, 64]
+
+# 2) Attention-Scores: QK^T / sqrt(d_k)
+scores = (Q @ K.transpose(-2, -1)) / torch.sqrt(torch.tensor(d_k, dtype=torch.float32))
+# Scores-Form: [1, 5, 5]
+
+# 3) Softmax anwenden
+attn_weights = F.softmax(scores, dim=-1)  # [1, 5, 5]
+
+# 4) Gewichtete Summe der Values
+output = attn_weights @ V  # [1, 5, 64]
+
+print(f"Attention-Gewichte Form: {attn_weights.shape}")
+print(f"Ausgabe Form: {output.shape}")
+print(f"\nAttention für Token 4 (Himmel):\n{attn_weights[0, 4]}")
+</code></pre>
+        </article>
+
+        <article class="card span-12">
+          <h2>📚 Weiterführende Konzepte</h2>
+
+          <details>
+            <summary>Maskierte Self-Attention (für Decoder)</summary>
+            <div class="details-content">
+              <p>Bei der Textgenerierung darf das Modell nur auf <em>vorherige</em> Tokens achten, nicht auf zukünftige:</p>
+<pre><code class="language-pseudo"># Maske erstellen (oberes Dreieck = -∞)
+mask = torch.triu(torch.ones(seq_len, seq_len) * float('-inf'), diagonal=1)
+
+# Vor Softmax anwenden:
+scores = scores + mask  # Zukünftige Positionen → -∞
+attn_weights = softmax(scores)  # -∞ wird zu 0
+</code></pre>
+              <p style="color: var(--muted)">Dadurch kann Token an Position <em>i</em> nur Tokens an Positionen 0 bis <em>i</em> sehen.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Kreuz-Attention (Encoder-Decoder)</summary>
+            <div class="details-content">
+              <p>Bei Übersetzungsaufgaben kommen Q aus dem Decoder, aber K und V aus dem Encoder:</p>
+<pre><code class="language-pseudo"># Decoder generiert Query
+Q = decoder_output @ W_Q
+
+# Encoder liefert Key und Value
+K = encoder_output @ W_K
+V = encoder_output @ W_V
+
+# Kreuz-Attention: Decoder achtet auf Encoder-Ausgaben
+output = Attention(Q, K, V)
+</code></pre>
+              <p style="color: var(--muted)">So kann der Decoder beim Generieren jedes Ziel-Tokens auf die gesamte Quell-Sequenz zugreifen.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Positions-Kodierung</summary>
+            <div class="details-content">
+              <p>Attention hat keine eingebaute Positions-Information! Lösung: Positions-Kodierung addieren:</p>
+<pre><code class="language-py">PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
+
+# Beispiel:
+x_mit_position = token_embedding + positional_encoding
+</code></pre>
+              <p style="color: var(--muted)">Dadurch "weiß" das Modell, dass "Himmel" an Position 4 steht und "Farbe" an Position 1.</p>
+            </div>
+          </details>
+        </article>
+
+        <!-- Interactive Animation Section -->
+        <article class="card span-12">
+          <h2>🎬 Interaktive Visualisierung</h2>
+          <p>Erleben Sie den Attention-Mechanismus in Aktion! Diese interaktive Animation zeigt Schritt für Schritt, wie Q, K, V Vektoren berechnet und zu kontextbewussten Repräsentationen kombiniert werden.</p>
+
+          <button class="animation-toggle-btn" id="toggleAttentionAnimationBtn" aria-label="Interaktive Animation anzeigen">Interaktive Animation anzeigen</button>
+
+          <div class="attention-animation-container" id="attentionAnimationContainer">
+            <div class="anim-sentence">
+              "Welche Farbe hat der Himmel?"
+            </div>
+
+            <div class="anim-controls">
+              <button id="animStartBtn">Animation starten</button>
+              <button id="animNextBtn" disabled>Nächster Schritt</button>
+              <button id="animResetBtn">Zurücksetzen</button>
+            </div>
+
+            <div class="anim-step-indicator" id="animStepIndicator">
+              Klicken Sie auf "Animation starten", um den Attention-Mechanismus Schritt für Schritt zu erleben
+            </div>
+
+            <div id="animVisualization">
+              <div class="anim-tokens-container" id="animTokensContainer"></div>
+
+              <div id="animVectorsSection" style="display: none;">
+                <div class="anim-vectors-section">
+                  <div class="anim-vector-box query">
+                    <div class="anim-vector-title">Query (Q)</div>
+                    <p style="margin: 10px 0; font-size: 0.9em; color: #a0a0a0; font-weight: 500;">Wonach ich suche</p>
+                    <div class="anim-vector-values" id="animQueryVector"></div>
+                  </div>
+
+                  <div class="anim-vector-box key">
+                    <div class="anim-vector-title">Key (K)</div>
+                    <p style="margin: 10px 0; font-size: 0.9em; color: #a0a0a0; font-weight: 500;">Was ich anbiete</p>
+                    <div class="anim-vector-values" id="animKeyVector"></div>
+                  </div>
+
+                  <div class="anim-vector-box value">
+                    <div class="anim-vector-title">Value (V)</div>
+                    <p style="margin: 10px 0; font-size: 0.9em; color: #a0a0a0; font-weight: 500;">Meine Information</p>
+                    <div class="anim-vector-values" id="animValueVector"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="animAttentionSection" style="display: none;">
+                <div class="anim-arrow">↓</div>
+                <div class="anim-formula" id="animFormula"></div>
+                <div class="anim-explanation" id="animExplanation"></div>
+
+                <div class="anim-attention-scores">
+                  <div class="anim-attention-title">Attention Scores</div>
+                  <div class="anim-score-bars" id="animScoreBars"></div>
+                </div>
+              </div>
+
+              <div id="animOutputSection" style="display: none;">
+                <div class="anim-arrow">↓</div>
+                <div class="anim-output-section">
+                  <div class="anim-output-title">Output: Gewichtete Summe der Values</div>
+                  <div class="anim-output-vector" id="animOutputVector"></div>
+                  <div class="anim-explanation" style="margin-top: 20px;">
+                    Die finale Ausgabe wird berechnet, indem jeder Value-Vektor mit seinem Attention-Gewicht multipliziert und alle summiert werden. Dies erzeugt eine kontextbewusste Repräsentation!
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <footer>
+        <div>Eine intuitive Einführung in den Attention-Mechanismus – das Herzstück moderner Transformer-Modelle.</div>
+        <div class="muted">Nächster Schritt: Kombinieren Sie diese Konzepte mit <a href="#" onclick="navigateTo('softmax'); return false;" style="color:var(--accent-2)">Softmax</a> für ein vollständiges Verständnis!</div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- Softmax Section -->
+  <section id="softmax" class="page-section">
+    <button class="home-button" onclick="navigateTo('landing')">Home</button>
+    <div class="container">
+      <header>
+        <div class="pill">📘 <strong>Softmax in LLMs</strong> <span class="badge">Praxisleitfaden</span></div>
+        <h1>Die Softmax-Funktion f&uuml;r Large Language Models (LLMs)</h1>
+        <div class="subtitle">Definition, Intuition, numerische Stabilit&auml;t, Ableitungen, Training (Kreuzentropie) und Sampling (Temperatur, Top‑k, Top‑p) – kompakt und praxistauglich.</div>
+        <div class="note" style="margin-top:12px; font-size:14px">
+          <strong>💡 Tastaturnavigation:</strong> Diese Seite ist f&uuml;r einfaches Lesen optimiert. Scrollen Sie einfach nach unten – kein Mausklick erforderlich. Mit <kbd class="kbd">Tab</kbd> navigieren Sie durch interaktive Elemente, <kbd class="kbd">Enter</kbd> &ouml;ffnet optionale Abschnitte.
+        </div>
+      </header>
+
+    <section class="grid single-col">
+      <article class="card span-12">
+        <h2>📐 1) Definition &amp; Theoretische Grundlagen</h2>
+        <p>In der Mathematik ist die sogenannte <strong>Softmax-Funktion</strong> oder <strong>normalisierte Exponentialfunktion</strong> eine Verallgemeinerung der logistischen Funktion, die einen <em>K</em>-dimensionalen Vektor <strong>z</strong> mit reellen Komponenten in einen <em>K</em>-dimensionalen Vektor σ(<strong>z</strong>) ebenfalls als Vektor reeller Komponenten in den Wertebereich (0,1) transformiert, wobei sich die Komponenten zu 1 aufsummieren.</p>
+
+        <div class="center" style="font-size:32px; margin:40px 0; font-family:var(--sans); padding:40px; background:#1a1a1a; border-radius:16px; border:4px solid var(--accent); box-shadow: 0 8px 24px rgba(0,217,255,.4)">
+          <span style="display:inline-block; vertical-align:middle; color:#ffffff; font-weight:700; font-size:40px">σ(<strong style="color:#ffffff; font-size:40px">z</strong>)<sub style="color:var(--accent-5); font-size:28px">i</sub> = </span>
+          <span style="display:inline-block; vertical-align:middle; text-align:center; margin:0 16px">
+            <div style="padding:0 20px 12px; color:#ffffff; font-weight:700; font-size:40px">e<sup style="font-size:28px; color:#ffffff; font-weight:700"><strong style="color:#ffffff">z</strong><sub style="font-size:24px; color:var(--accent-5)">i</sub></sup></div>
+            <div style="border-top:5px solid var(--accent-5); padding:12px 20px 0">
+              <span style="font-size:52px; vertical-align:middle; color:#ffffff; font-weight:700">&sum;</span><span style="font-size:28px; vertical-align:sub; color:var(--accent-5); font-weight:700">j=1</span><sup style="font-size:28px; color:var(--accent-5); font-weight:700">K</sup>
+              <span style="margin-left:12px; color:#ffffff; font-weight:700; font-size:40px">e<sup style="font-size:28px; color:#ffffff; font-weight:700"><strong style="color:#ffffff">z</strong><sub style="font-size:24px; color:var(--accent-5)">j</sub></sup></span>
+            </div>
+          </span>
+        </div>
+
+        <p>Die <strong>Softmax-Funktion</strong> ist somit eine mathematische Funktion, die einen Vektor reeller Zahlen in eine Wahrscheinlichkeitsverteilung transformiert.</p>
+
+        <h3 style="font-size:18px; margin-top:24px">Mathematische Definition</h3>
+        <p>Gegeben ein Vektor von <em>Logits</em> <code>z = (z<sub>1</sub>,&hellip;,z<sub>V</sub>)</code> (typisch: Vokabulargr&ouml;&szlig;e <code>V</code>), definiert Softmax:</p>
+        <p class="center mono">σ(z)<sub>i</sub> = exp(z<sub>i</sub>) / &sum;<sub>j=1..V</sub> exp(z<sub>j</sub>)</p>
+        <ul class="list-check">
+          <li><strong>Wertebereich:</strong> <code>σ(z)<sub>i</sub> &in; (0,1)</code></li>
+          <li><strong>Normiert:</strong> <code>&sum;<sub>i</sub> σ(z)<sub>i</sub> = 1</code></li>
+          <li><strong>Shift-Invarianz:</strong> <code>σ(z + c·1) = σ(z)</code> f&uuml;r jede Konstante <code>c</code></li>
+        </ul>
+
+        <h3 style="font-size:18px; margin-top:24px">Mathematische Eigenschaften</h3>
+        <ul class="list-check">
+          <li><strong>Stetig:</strong> Die Funktion ist &uuml;berall stetig</li>
+          <li><strong>Differenzierbar:</strong> Beliebig oft differenzierbar</li>
+          <li><strong>Monoton steigend:</strong> H&ouml;here Eingaben f&uuml;hren zu h&ouml;heren Wahrscheinlichkeiten</li>
+          <li><strong>Skalierungsgleich:</strong> Invariant gegen&uuml;ber globalen Shifts</li>
+        </ul>
+
+        <div class="note" style="margin-top:16px">
+          <strong>Intuition:</strong> Softmax verwandelt beliebige reelle Logits in eine Wahrscheinlichkeitsverteilung. H&ouml;here Logits erhalten exponentiell mehr Masse.
+        </div>
+
+        <div class="note" style="margin-top:12px; border-left-color: var(--accent-2)">
+          <strong>Verbindung zur Statistischen Physik:</strong> Die Softmax-Funktion entspricht der <em>Boltzmann-Verteilung</em> aus der statistischen Mechanik. Der Parameter <code>1/τ</code> (reziproke Temperatur) kontrolliert die &bdquo;Sch&auml;rfe&ldquo; der Verteilung – analog zur physikalischen Temperatur in thermischen Systemen.
+        </div>
+
+        <h3 style="font-size:18px; margin-top:20px">Anwendungsbereiche</h3>
+        <ul class="list-check">
+          <li><strong>Multiclass-Klassifikation:</strong> Ausgabeschicht neuronaler Netze f&uuml;r K-Klassen-Probleme</li>
+          <li><strong>Multinomiale logistische Regression:</strong> Auch als &bdquo;Softmax-Regression&ldquo; bekannt</li>
+          <li><strong>Attention-Mechanismen:</strong> In Transformern zur Gewichtung von Queries &amp; Keys</li>
+          <li><strong>Reinforcement Learning:</strong> Umwandlung von Q-Werten in Aktionswahrscheinlichkeiten (Policy)</li>
+          <li><strong>Natural Language Processing:</strong> Token-Auswahl in LLMs, Beam Search, Sampling-Strategien</li>
+          <li><strong>Computer Vision:</strong> Objektklassifikation, semantische Segmentierung</li>
+        </ul>
+
+        <h3 style="font-size:18px; margin-top:20px">Beziehung zu anderen Funktionen</h3>
+        <p>F&uuml;r den <strong>Bin&auml;rfall</strong> (2 Klassen) reduziert sich Softmax zur <strong>logistischen Funktion (Sigmoid)</strong>:</p>
+        <p class="mono">σ(z)<sub>1</sub> = 1 / (1 + exp(−(z<sub>1</sub> − z<sub>2</sub>))) = sigmoid(z<sub>1</sub> − z<sub>2</sub>)</p>
+      </article>
+
+      <article class="card span-12">
+        <h2>🛡️ 2) Numerische Stabilit&auml;t</h2>
+        <p>Direktes <code>exp(z)</code> kann zu <em>Overflow/Underflow</em> f&uuml;hren. Stabiler Algorithmus:</p>
+<pre><code class="language-pseudo"># Stabiler Softmax
+m = max(z)                 # 1) Subtrahiere Maximum
+e = exp(z - m)             # 2) Exponentiere die zentrierten Logits
+p = e / sum(e)             # 3) Normiere</code></pre>
+        <p>Stabiles <strong>log-softmax</strong> via Log-Sum-Exp:</p>
+        <p class="mono">log σ(z)<sub>i</sub> = z<sub>i</sub> − log &sum;<sub>j</sub> exp(z<sub>j</sub>)</p>
+<pre><code class="language-pseudo">m = max(z)
+logsumexp = m + log(sum(exp(z - m)))
+log_softmax_i = z[i] - logsumexp</code></pre>
+      </article>
+
+      <article class="card span-12">
+        <h2>∂ 3) Ableitungen (Jacobian)</h2>
+        <p>Mit <code>p = σ(z)</code> gilt:</p>
+        <p class="mono">∂p<sub>i</sub> / ∂z<sub>j</sub> = p<sub>i</sub> (δ<sub>ij</sub> − p<sub>j</sub>)</p>
+        <p>Matrixform: <code>J = diag(p) − p p<sup>T</sup></code>.</p>
+        <div class="note">Diese Struktur f&uuml;hrt zu effizienten Backprop‑Berechnungen in modernen Frameworks.</div>
+      </article>
+
+      <article class="card span-12">
+        <h2>🎯 4) Training mit Kreuzentropie</h2>
+        <p>F&uuml;r ein Ziel-Token <code>y</code> (one‑hot) und Logits <code>z</code> lautet der Verlust:</p>
+        <p class="mono">L = − log σ(z)<sub>y</sub> = − z<sub>y</sub> + log &sum;<sub>j</sub> exp(z<sub>j</sub>)</p>
+        <p>Gradient w.r.t. Logits:</p>
+        <p class="mono">∂L/∂z = p − onehot(y)</p>
+        <p class="muted">Mit <em>Label Smoothing</em> (<code>ε</code>) ersetzt man <code>onehot(y)</code> durch eine glatte Zielverteilung, was Generalisierung verbessern kann.</p>
+      </article>
+
+      <article class="card span-12">
+        <h2>🤖 5) Softmax in LLMs</h2>
+        <ul class="list-check">
+          <li><strong>Pipeline:</strong> Transformer &rarr; <em>Logits</em> &rarr; <strong>Softmax</strong> &rarr; Token‑Wahrscheinlichkeiten.</li>
+          <li><strong>Temperatur τ &gt; 0:</strong> <code>p = softmax(z / τ)</code>.
+            <div class="muted">Kleinere τ &rarr; spitzere Verteilung (deterministischer), gr&ouml;&szlig;ere τ &rarr; flacher (kreativer, aber noisier).</div>
+          </li>
+          <li><strong>Top‑k:</strong> W&auml;hle nur die gr&ouml;&szlig;ten k‑Wahrscheinlichkeiten, renormiere.</li>
+          <li><strong>Top‑p (Nucleus):</strong> W&auml;hle die kleinste Menge von Tokens, deren kumulative Masse ≥ p ist, renormiere.</li>
+          <li><strong>Logits vs. Log‑Probs:</strong> Logits sind unkalibrierte Scores; <em>log‑σ(z)</em> sind additiv stabiler und oft f&uuml;r Summationen/Vergleiche vorzuziehen.</li>
+        </ul>
+
+        <div class="note" style="margin-top:16px; border-left-color: var(--accent-2)">
+          <strong>GPU-Beschleunigung:</strong> Die Softmax-Funktion ist als hochoptimierter <strong>CUDA-Kernel</strong> in NVIDIAs cuDNN-Bibliothek (CUDA Deep Neural Network library) sowie direkt in modernen Deep-Learning-Frameworks (PyTorch, TensorFlow) implementiert. Diese spezialisierten Kernel-Implementierungen nutzen die massiv-parallele Architektur von NVIDIA GPUs f&uuml;r maximale Performance bei der Inferenz und beim Training gro&szlig;er Sprachmodelle. Die GPU-Parallelisierung erm&ouml;glicht die gleichzeitige Berechnung von Softmax &uuml;ber tausende Tokens in einem Batch.
+        </div>
+      </article>
+
+      <article class="card span-12">
+        <h2>⚙️ 6) Eigenschaften &amp; Fallstricke</h2>
+        <table class="table">
+          <thead><tr><th>Aspekt</th><th>Kurzinfo</th></tr></thead>
+          <tbody>
+            <tr><td>Shift‑Invarianz</td><td><span class="mono">σ(z+c)=σ(z)</span></td></tr>
+            <tr><td>Skalierung</td><td>Skaliert man z, ver&auml;ndert sich die &bdquo;Spitzigkeit&ldquo;</td></tr>
+            <tr><td>Underflow</td><td>Kleine exp‑Werte fallen zu 0 &rarr; nutze Log‑Softmax</td></tr>
+            <tr><td>Overflow</td><td>Gro&szlig;e Logits &rarr; <span class="mono">exp()</span> &infin; &rarr; subtrahiere <span class="mono">max(z)</span></td></tr>
+            <tr><td>Batching</td><td>Softmax stets entlang korrekter Achse anwenden</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card span-12">
+        <h2>🎮 7) Interaktive Demo</h2>
+        <details>
+          <summary>Demo öffnen (optional, Tastatur: Enter/Leertaste)</summary>
+          <div class="details-content">
+            <p style="margin-top:12px; color:#ffffff">Geben Sie Logits (durch Komma getrennt) ein, w&auml;hlen Sie ggf. eine Temperatur, Top‑k/Top‑p und sehen Sie die resultierenden Wahrscheinlichkeiten. Alle Berechnungen sind numerisch stabil umgesetzt.</p>
+            <div class="controls">
+              <label>Logits:&nbsp;<input id="logits" size="48" value="2.0, 0.5, -1.0, 3.2, 0.0" tabindex="1" aria-label="Logits eingeben"></label>
+              <label>Temperatur τ:&nbsp;<input id="temp" type="number" step="0.01" value="1.00" min="0.01" tabindex="2" aria-label="Temperatur"></label>
+              <label>Top‑k:&nbsp;<input id="topk" type="number" step="1" value="0" min="0" tabindex="3" aria-label="Top-k Wert"></label>
+              <label>Top‑p:&nbsp;<input id="topp" type="number" step="0.01" value="0.0" min="0" max="1" tabindex="4" aria-label="Top-p Wert"></label>
+              <button class="btn-primary" id="btn-run" tabindex="5" aria-label="Softmax berechnen">Softmax berechnen</button>
+              <button class="btn-neutral" id="btn-reset" tabindex="6" aria-label="Zur Standardwerten zurücksetzen">Zur&uuml;cksetzen</button>
+            </div>
+            <div id="result" style="margin-top:14px"></div>
+            <canvas id="chart" height="220" style="width:100%; margin-top:16px; background:var(--card); border-radius:14px; border:1px solid rgba(255,255,255,.06)"></canvas>
+            <pre><code class="language-js">// Kernelemente (vereinfachte Referenz-Implementierung)
+function stableSoftmax(z, tau=1.0){
+  const invT = 1.0 / tau;
+  const zScaled = z.map(v => v * invT);
+  const m = Math.max(...zScaled);
+  const e = zScaled.map(v => Math.exp(v - m));
+  const s = e.reduce((a,b)=>a+b, 0);
+  return e.map(v => v / s);
+}
+function logSumExp(z){
+  const m = Math.max(...z);
+  return m + Math.log(z.map(v => Math.exp(v - m)).reduce((a,b)=>a+b,0));
+}
+</code></pre>
+          </div>
+        </details>
+      </article>
+
+      <article class="card span-12">
+        <h2>🐍 8) Code‑Snippets (Python/NumPy)</h2>
+<pre><code class="language-py">import numpy as np
+
+def softmax(x, axis=-1, tau=1.0):
+    x = np.asarray(x, dtype=np.float64) / float(tau)
+    m = np.max(x, axis=axis, keepdims=True)
+    e = np.exp(x - m)
+    return e / np.sum(e, axis=axis, keepdims=True)
+
+def log_softmax(x, axis=-1):
+    x = np.asarray(x, dtype=np.float64)
+    m = np.max(x, axis=axis, keepdims=True)
+    return x - (m + np.log(np.sum(np.exp(x - m), axis=axis, keepdims=True)))</code></pre>
+      </article>
+
+      <article class="card span-12">
+        <h2>🔥 9) Code‑Snippets (PyTorch)</h2>
+<pre><code class="language-py">import torch
+import torch.nn.functional as F
+
+z = torch.tensor([[2.0, 0.5, -1.0, 3.2, 0.0]])
+p = F.softmax(z, dim=-1)          # Softmax
+ls = F.log_softmax(z, dim=-1)     # Log-Softmax
+y = torch.tensor([3])             # Ziel-Index
+loss = F.cross_entropy(z, y)      # CE: kombiniert Log-Softmax + NLL
+loss.backward()                   # Gradienten: ∂L/∂z = p - onehot(y)</code></pre>
+      </article>
+
+      <article class="card span-12">
+        <h2>🧮 10) Einfaches Rechenbeispiel</h2>
+        <p>Gegeben seien drei Logits f&uuml;r drei m&ouml;gliche n&auml;chste Tokens: <code>z = [2.0, 1.0, 0.1]</code></p>
+
+        <div class="note">
+          <strong>Schritt 1: Stabilit&auml;t – Maximum subtrahieren</strong>
+          <p class="mono">max(z) = 2.0<br>z' = z - 2.0 = [0.0, -1.0, -1.9]</p>
+        </div>
+
+        <div class="note" style="margin-top:12px">
+          <strong>Schritt 2: Exponentialfunktion anwenden</strong>
+          <p class="mono">
+            exp(0.0) = 1.0000<br>
+            exp(-1.0) = 0.3679<br>
+            exp(-1.9) = 0.1496<br>
+            Summe = 1.5175
+          </p>
+        </div>
+
+        <div class="note" style="margin-top:12px">
+          <strong>Schritt 3: Normieren</strong>
+          <p class="mono">
+            p<sub>0</sub> = 1.0000 / 1.5175 = 0.6590 (65.90%)<br>
+            p<sub>1</sub> = 0.3679 / 1.5175 = 0.2424 (24.24%)<br>
+            p<sub>2</sub> = 0.1496 / 1.5175 = 0.0986 (9.86%)<br>
+            Summe = 1.0000 ✓
+          </p>
+        </div>
+
+        <p style="margin-top:16px"><strong>Interpretation:</strong> Token 0 (h&ouml;chster Logit) bekommt 66% Wahrscheinlichkeit, Token 1 etwa 24%, Token 2 knapp 10%. Die Exponentialfunktion verst&auml;rkt den Abstand zwischen den Logits erheblich.</p>
+
+        <div class="warn" style="margin-top:12px">
+          <strong>Wichtig:</strong> Ohne Subtraktion des Maximums w&uuml;rde <code>exp(2.0) = 7.389</code> direkt berechnet – bei gro&szlig;en Logits (z.B. 100) w&uuml;rde <code>exp(100) ≈ 2.7×10<sup>43</sup></code> zu Overflow f&uuml;hren!
+        </div>
+      </article>
+
+    </section>
+
+      <footer>
+        <div>Erstellt f&uuml;r Entwickler:innen und Forschende, die LLM‑Ausgaben pr&auml;zise verstehen, debuggen und steuern m&ouml;chten.</div>
+        <div class="muted">Tipp: F&uuml;r Evaluierung von Log‑Wahrscheinlichkeiten immer <code>log_softmax</code> und <code>logsumexp</code> nutzen.</div>
+      </footer>
+    </div>
+  </section>
+
+<script>
+// Navigation between pages
+function navigateTo(pageId) {
+  // Hide all sections
+  document.querySelectorAll('.page-section').forEach(section => {
+    section.classList.remove('active');
+  });
+
+  // Show selected section
+  const targetSection = document.getElementById(pageId);
+  if (targetSection) {
+    targetSection.classList.add('active');
+    // Scroll to top when navigating
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// Keyboard navigation for huge buttons
+document.querySelectorAll('.huge-button').forEach(button => {
+  button.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      button.click();
+    }
+  });
+});
+
+(function(){
+  const $ = sel => document.querySelector(sel);
+  const fmt = (x) => (Math.abs(x) < 1e-12 ? "0.0000" : x.toFixed(6));
+  const barColor = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#4cc9f0';
+
+  function parseLogits(s){
+    return s.split(',').map(t => Number(t.trim())).filter(v => Number.isFinite(v));
+  }
+  function stableSoftmax(z, tau=1.0){
+    const invT = 1.0 / Math.max(1e-6, tau);
+    const zScaled = z.map(v => v * invT);
+    const m = Math.max(...zScaled);
+    const e = zScaled.map(v => Math.exp(v - m));
+    const s = e.reduce((a,b)=>a+b, 0);
+    return e.map(v => v / s);
+  }
+  function topkFilter(p, k){
+    if (!k || k <= 0 || k >= p.length) return p.map((v)=>v);
+    const idx = [...p.keys()].sort((a,b)=>p[b]-p[a]).slice(0,k);
+    const mask = new Set(idx);
+    const q = p.map((v,i) => mask.has(i) ? v : 0);
+    const s = q.reduce((a,b)=>a+b,0);
+    return s>0 ? q.map(v=>v/s) : q;
+  }
+  function toppFilter(p, prob){
+    if (!prob || prob <= 0 || prob >= 1) return p.map((v)=>v);
+    const idx = [...p.keys()].sort((a,b)=>p[b]-p[a]);
+    let cum=0, keep=new Set();
+    for (const i of idx){
+      keep.add(i); cum+=p[i]; if (cum >= prob) break;
+    }
+    const q = p.map((v,i) => keep.has(i) ? v : 0);
+    const s = q.reduce((a,b)=>a+b,0);
+    return s>0 ? q.map(v=>v/s) : q;
+  }
+  function logSumExp(z){
+    const m = Math.max(...z);
+    return m + Math.log(z.map(v => Math.exp(v - m)).reduce((a,b)=>a+b,0));
+  }
+  function renderTable(z, p, container){
+    const rows = z.map((zi,i)=>{
+      const pi = p[i]; const li = Math.log(Math.max(1e-300, pi));
+      return `<tr>
+        <td class="mono">${i}</td>
+        <td class="mono">${fmt(zi)}</td>
+        <td class="mono">${fmt(pi)}</td>
+        <td class="mono">${fmt(li)}</td>
+      </tr>`
+    }).join('');
+    container.innerHTML = `
+      <div class="kpi"><div>∑ p =</div> <strong class="mono">${fmt(p.reduce((a,b)=>a+b,0))}</strong></div>
+      <div style="overflow:auto">
+        <table class="table">
+          <thead><tr><th>Index</th><th>Logit z</th><th>p = softmax(z)</th><th>log p</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+  function renderChart(p){
+    const canvas = $("#chart");
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.clientWidth;
+    const H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const n = p.length;
+    const barW = Math.max(6, Math.floor((W - 40) / Math.max(1,n)));
+    const maxP = Math.max(...p, 0.001);
+    const scale = (v) => (H - 30) * (v / maxP);
+    ctx.font = "14px ui-sans-serif, system-ui";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Token‑Wahrscheinlichkeiten (normiert)", 10, 18);
+
+    // Color gradient for bars - high contrast for dark rooms
+    const colors = ['#00d9ff', '#00ff88', '#ff4d94', '#bb86fc', '#ffd740', '#00ff88', '#40c4ff'];
+
+    p.forEach((v,i)=>{
+      const x = 20 + i * barW;
+      const h = Math.max(1, scale(v));
+      const y = H - 10 - h;
+
+      // Create gradient for each bar
+      const gradient = ctx.createLinearGradient(x, y, x, y + h);
+      const color = colors[i % colors.length];
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, color + '60');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x, y, barW - 2, h);
+
+      // Add subtle border to bars
+      ctx.strokeStyle = color + 'aa';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, barW - 2, h);
+    });
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("i", W - 14, H - 2);
+  }
+
+  function run(){
+    const z = parseLogits($("#logits").value);
+    if (!z.length){ alert("Bitte Logits eingeben (Komma‑getrennt)."); return; }
+    const tau = Number($("#temp").value) || 1.0;
+    const k = parseInt($("#topk").value || "0", 10);
+    const pth = Number($("#topp").value) || 0.0;
+
+    let p = stableSoftmax(z, tau);
+    if (k > 0) p = topkFilter(p, k);
+    if (pth > 0 && pth < 1) p = toppFilter(p, pth);
+
+    renderTable(z, p, $("#result"));
+    renderChart(p);
+  }
+  $("#btn-run").addEventListener("click", run);
+  $("#btn-reset").addEventListener("click", () => {
+    $("#logits").value = "2.0, 0.5, -1.0, 3.2, 0.0";
+    $("#temp").value = "1.00"; $("#topk").value = "0"; $("#topp").value = "0.0";
+    run();
+  });
+
+  // Keyboard support: Enter key to run calculation from inputs
+  document.querySelectorAll("#logits, #temp, #topk, #topp").forEach(input => {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        run();
+      }
+    });
+  });
+
+  run();
+})();
+
+// Attention Animation Toggle
+document.getElementById('toggleAttentionAnimationBtn').addEventListener('click', function() {
+  const container = document.getElementById('attentionAnimationContainer');
+  const btn = this;
+
+  if (container.classList.contains('show')) {
+    container.classList.remove('show');
+    btn.classList.remove('active');
+    btn.textContent = 'Interaktive Animation anzeigen';
+    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    container.classList.add('show');
+    btn.classList.add('active');
+    btn.textContent = 'Interaktive Animation ausblenden';
+    setTimeout(() => {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+});
+
+// Attention Animation Logic
+(function() {
+  const animSentence = "Welche Farbe hat der Himmel?";
+  const animTokens = ["Welche", "Farbe", "hat", "der", "Himmel"];
+  let animCurrentStep = 0;
+  let animSelectedTokenIndex = 4; // Focus on "Himmel" (Position 4)
+
+  // Specific vectors based on the example from the attention explanation
+  const animVectors = {
+    query: [
+      [0.3, -0.2, 0.5],   // Welche
+      [0.8, 0.4, 0.1],    // Farbe
+      [0.0, 0.1, 0.2],    // hat
+      [0.2, 0.0, 0.1],    // der
+      [1.2, 0.9, 0.6]     // Himmel
+    ],
+    key: [
+      [0.3, -0.2, 0.5],   // K_Welche
+      [0.8, 0.4, 0.1],    // K_Farbe
+      [0.0, 0.1, 0.2],    // K_hat
+      [0.2, 0.0, 0.1],    // K_der
+      [1.0, 0.8, 0.7]     // K_Himmel
+    ],
+    value: [
+      [0.4, 0.2, -0.1],   // V_Welche
+      [0.9, 0.6, 0.3],    // V_Farbe
+      [0.1, 0.0, 0.2],    // V_hat
+      [0.2, 0.1, 0.1],    // V_der
+      [1.1, 0.9, 0.7]     // V_Himmel
+    ]
+  };
+
+  let animAttentionScores = [];
+  let animNormalizedScores = [];
+
+  function animInitializeTokens() {
+    const container = document.getElementById('animTokensContainer');
+    container.innerHTML = '';
+    animTokens.forEach((token, index) => {
+      const tokenDiv = document.createElement('div');
+      tokenDiv.className = 'anim-token';
+      tokenDiv.textContent = token;
+      tokenDiv.dataset.index = index;
+      tokenDiv.addEventListener('click', () => animSelectToken(index));
+      container.appendChild(tokenDiv);
+    });
+  }
+
+  function animSelectToken(index) {
+    animSelectedTokenIndex = index;
+    document.querySelectorAll('.anim-token').forEach((t, i) => {
+      t.classList.toggle('selected', i === index);
+    });
+  }
+
+  function animDisplayVectors() {
+    const queryDiv = document.getElementById('animQueryVector');
+    const keyDiv = document.getElementById('animKeyVector');
+    const valueDiv = document.getElementById('animValueVector');
+
+    const token = animTokens[animSelectedTokenIndex];
+
+    queryDiv.innerHTML = `
+      <div style="color: var(--accent-5); font-weight: bold; margin-bottom: 10px;">Q_${token} = [${animVectors.query[animSelectedTokenIndex].join(', ')}]</div>
+      ${animVectors.query[animSelectedTokenIndex]
+        .map((v, i) => `<div class="anim-vector-value">Dim ${i+1}: ${v.toFixed(2)}</div>`).join('')}
+    `;
+
+    keyDiv.innerHTML = `
+      <div style="color: var(--accent-3); font-weight: bold; margin-bottom: 10px;">K_${token} = [${animVectors.key[animSelectedTokenIndex].join(', ')}]</div>
+      ${animVectors.key[animSelectedTokenIndex]
+        .map((v, i) => `<div class="anim-vector-value">Dim ${i+1}: ${v.toFixed(2)}</div>`).join('')}
+    `;
+
+    valueDiv.innerHTML = `
+      <div style="color: var(--accent-2); font-weight: bold; margin-bottom: 10px;">V_${token} = [${animVectors.value[animSelectedTokenIndex].join(', ')}]</div>
+      ${animVectors.value[animSelectedTokenIndex]
+        .map((v, i) => `<div class="anim-vector-value">Dim ${i+1}: ${v.toFixed(2)}</div>`).join('')}
+    `;
+  }
+
+  function animCalculateAttentionScores() {
+    const queryVec = animVectors.query[animSelectedTokenIndex].map(Number);
+    animAttentionScores = animVectors.key.map(keyVec => {
+      const dotProduct = keyVec.reduce((sum, val, i) =>
+        sum + Number(val) * queryVec[i], 0);
+      return dotProduct / Math.sqrt(queryVec.length);
+    });
+
+    // Softmax
+    const expScores = animAttentionScores.map(score => Math.exp(score));
+    const sumExp = expScores.reduce((a, b) => a + b, 0);
+    animNormalizedScores = expScores.map(score => score / sumExp);
+  }
+
+  function animDisplayAttentionScores() {
+    const scoreBars = document.getElementById('animScoreBars');
+    const focusToken = animTokens[animSelectedTokenIndex];
+    const queryVec = animVectors.query[animSelectedTokenIndex];
+
+    scoreBars.innerHTML = `
+      <div style="color: var(--accent-5); font-weight: bold; margin-bottom: 20px; font-size: 1.1em; text-align: center;">
+        Fokus auf: "${focusToken}" (Position ${animSelectedTokenIndex})
+      </div>
+      <div style="background: #0d0d0d; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid var(--accent);">
+        <div style="color: var(--accent-5); font-weight: bold; margin-bottom: 10px;">
+          Q_${focusToken} = [${queryVec.join(', ')}]
+        </div>
+        <div style="color: #a0a0a0; font-size: 0.9em; margin-top: 10px;">
+          # Skalarprodukt mit allen Keys (Ähnlichkeit messen):
+        </div>
+      </div>
+    `;
+
+    animTokens.forEach((token, index) => {
+      const keyVec = animVectors.key[index];
+      const rawScore = animAttentionScores[index];
+      const percentage = (animNormalizedScores[index] * 100).toFixed(1);
+
+      // Calculate the detailed breakdown
+      const products = queryVec.map((q, i) => `${q.toFixed(1)}×${keyVec[i].toFixed(1)}`).join(' + ');
+
+      const calcDiv = document.createElement('div');
+      calcDiv.style.cssText = 'background: #1a1a1a; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);';
+      calcDiv.innerHTML = `
+        <div style="color: var(--accent-2); font-weight: bold; margin-bottom: 8px; font-family: var(--mono); font-size: 0.95em;">
+          Score("${focusToken}" → "${token}") = Q_${focusToken} · K_${token}
+        </div>
+        <div style="color: #ffffff; font-family: var(--mono); font-size: 0.9em; margin-bottom: 8px;">
+          = ${products} = ${rawScore.toFixed(2)}
+        </div>
+        <div class="anim-score-item" style="margin-top: 10px;">
+          <div class="anim-score-label">${token}</div>
+          <div class="anim-score-bar-container">
+            <div class="anim-score-bar" style="width: ${percentage}%">
+              ${percentage}%
+            </div>
+          </div>
+        </div>
+      `;
+
+      scoreBars.appendChild(calcDiv);
+
+      setTimeout(() => {
+        const tokenElem = document.querySelector(`.anim-token[data-index="${index}"]`);
+        if (tokenElem) {
+          tokenElem.classList.add('attending');
+          setTimeout(() => tokenElem.classList.remove('attending'), 1000);
+        }
+      }, index * 200);
+    });
+  }
+
+  function animCalculateOutput() {
+    const output = Array(3).fill(0);
+
+    animTokens.forEach((token, i) => {
+      const weight = animNormalizedScores[i];
+      const valueVec = animVectors.value[i].map(Number);
+      valueVec.forEach((val, j) => {
+        output[j] += val * weight;
+      });
+    });
+
+    return output;
+  }
+
+  function animDisplayOutput() {
+    const output = animCalculateOutput();
+    const outputDiv = document.getElementById('animOutputVector');
+    const focusToken = animTokens[animSelectedTokenIndex];
+
+    // Build detailed calculation
+    let calculation = `Output_${focusToken} = `;
+    const parts = [];
+    animTokens.forEach((token, i) => {
+      const weight = animNormalizedScores[i];
+      parts.push(`${weight.toFixed(3)}×V_${token}`);
+    });
+    calculation += parts.join(' + ');
+
+    outputDiv.innerHTML = `
+      <div style="margin-bottom: 15px; font-weight: bold; color: var(--accent-2); font-size: 1.1em;">
+        Kontextbewusste Repräsentation für "${focusToken}":
+      </div>
+      <div style="background: #0d0d0d; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid var(--accent); font-family: var(--mono); font-size: 0.9em; color: #ffffff;">
+        ${calculation}
+      </div>
+      <div style="background: #0d0d0d; padding: 20px; border-radius: 10px; border: 2px solid var(--accent-2);">
+        <div style="color: var(--accent-5); font-weight: bold; margin-bottom: 15px;">
+          Output_${focusToken} = [${output.map(v => v.toFixed(4)).join(', ')}]
+        </div>
+        ${output.map((v, i) => `
+          <div style="padding: 10px; margin: 8px 0; background: #1a1a1a; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); color: #ffffff;">
+            <strong>Dimension ${i + 1}:</strong> ${v.toFixed(4)}
+          </div>
+        `).join('')}
+      </div>
+      <div style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 10px; border: 2px solid var(--accent-5); color: var(--accent-5);">
+        <strong>Ergebnis:</strong> Der neue Vektor für "${focusToken}" ist eine gewichtete Mischung aller Wörter im Satz, wobei "${focusToken}" selbst (${(animNormalizedScores[animSelectedTokenIndex] * 100).toFixed(1)}%) den größten Einfluss hat. Dieser Vektor enthält jetzt <em style="color: var(--accent-2);">kontextuelle Information</em>!
+      </div>
+    `;
+  }
+
+  const animSteps = [
+    {
+      indicator: 'Schritt 1: Fokus auf "Himmel" (Position 4) - Das Token, für das wir Attention berechnen',
+      action: () => {
+        animSelectToken(4);
+      }
+    },
+    {
+      indicator: 'Schritt 2: Q, K, V Vektoren für "Himmel" - Transformierte Repräsentationen',
+      action: () => {
+        document.getElementById('animVectorsSection').style.display = 'block';
+        animDisplayVectors();
+      }
+    },
+    {
+      indicator: 'Schritt 3: Skalarprodukt berechnen - Q_Himmel · K_i für jedes Token',
+      action: () => {
+        document.getElementById('animAttentionSection').style.display = 'block';
+        document.getElementById('animFormula').textContent =
+          'Attention(Q, K, V) = softmax(Q · Kᵀ / √dₖ) · V';
+        document.getElementById('animExplanation').innerHTML =
+          'Skalarprodukt misst die <strong>Ähnlichkeit</strong> zwischen Query und Keys.<br>Hohe Werte = hohe Relevanz für das aktuelle Token.';
+        animCalculateAttentionScores();
+      }
+    },
+    {
+      indicator: 'Schritt 4: Softmax anwenden - Normalisierung zu Wahrscheinlichkeitsverteilung',
+      action: () => {
+        document.getElementById('animExplanation').innerHTML =
+          'Softmax konvertiert rohe Scores in Wahrscheinlichkeiten (Summe = 1).<br>Nach Skalierung mit √d<sub>k</sub> für numerische Stabilität.';
+        animDisplayAttentionScores();
+      }
+    },
+    {
+      indicator: 'Schritt 5: Gewichtete Summe - Kombiniere Values basierend auf Attention-Gewichten',
+      action: () => {
+        document.getElementById('animOutputSection').style.display = 'block';
+        animDisplayOutput();
+      }
+    },
+    {
+      indicator: "Animation abgeschlossen! Klicken Sie auf verschiedene Tokens, um zu sehen, wie sich die Attention ändert.",
+      action: () => {
+        document.getElementById('animNextBtn').disabled = true;
+        document.querySelectorAll('.anim-token').forEach(token => {
+          token.style.cursor = 'pointer';
+          token.onclick = (e) => {
+            const index = parseInt(e.target.dataset.index);
+            animSelectedTokenIndex = index;
+            animSelectToken(index);
+            animDisplayVectors();
+            animCalculateAttentionScores();
+            animDisplayAttentionScores();
+            animDisplayOutput();
+          };
+        });
+      }
+    }
+  ];
+
+  document.getElementById('animStartBtn').addEventListener('click', () => {
+    animCurrentStep = 0;
+    document.getElementById('animStartBtn').disabled = true;
+    document.getElementById('animNextBtn').disabled = false;
+    animInitializeTokens();
+    animNextStep();
+  });
+
+  document.getElementById('animNextBtn').addEventListener('click', animNextStep);
+
+  document.getElementById('animResetBtn').addEventListener('click', () => {
+    animCurrentStep = 0;
+    animSelectedTokenIndex = 4;
+    document.getElementById('animStartBtn').disabled = false;
+    document.getElementById('animNextBtn').disabled = true;
+    document.getElementById('animVectorsSection').style.display = 'none';
+    document.getElementById('animAttentionSection').style.display = 'none';
+    document.getElementById('animOutputSection').style.display = 'none';
+    document.getElementById('animStepIndicator').textContent = 'Klicken Sie auf "Animation starten", um den Attention-Mechanismus Schritt für Schritt zu erleben';
+    document.getElementById('animTokensContainer').innerHTML = '';
+  });
+
+  function animNextStep() {
+    if (animCurrentStep < animSteps.length) {
+      const step = animSteps[animCurrentStep];
+      document.getElementById('animStepIndicator').textContent = step.indicator;
+      step.action();
+      animCurrentStep++;
+    }
+  }
+
+  animInitializeTokens();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+
+cd /home/wpl/02_development/04_house_manuals
+
+git clone https://github.com/AINxtGenDev/home-manuals.git
+cd home-manuals
+
+python3 -m venv home-manuals
+source home-manuals/bin/activate
+
+python3 -m pip install --upgrade pip
+
+pip install -r requirements-dev.txt  # Development
+pip install -r requirements.txt      # Production only
+
+
+cp .env.example .env
+python - <<'PY'
+import secrets
+print("SECRET_KEY=" + secrets.token_urlsafe(32))
+PY
+
+
+flask init-db
+flask create-admin
+flask run
+
+
+Change your repository remote from HTTPS to SSH
+cd /home/nuc8/05_development/02_python/04_house_manuals/home-manuals
+git remote set-url origin git@github.com:AINxtGenDev/home-manuals.git
+
+git remote -v
+origin	git@github.com:AINxtGenDev/home-manuals.git (fetch)
+origin	git@github.com:AINxtGenDev/home-manuals.git (push)
+
+git checkout -b feature/version-1-basic
+git add .
+git commit -m "Add: brief description of the changes"
+git push origin feature/version-1-basic
+
