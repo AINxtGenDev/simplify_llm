@@ -12,7 +12,6 @@ python3 -m pip install --upgrade pip
 pip install -r requirements-dev.txt  # Development
 pip install -r requirements.txt      # Production only
 
-
 Change your repository remote from HTTPS to SSH
 cd /home/nuc8/05_development/02_python/06_explain_llm/simplify_llm
 git remote set-url origin git@github.com:AINxtGenDev/simplify_llm.git
@@ -35,3 +34,10 @@ git status
 git add .
 git commit -m "Initial commit"
 git push
+
+#######################################################################
+# Run a local server to view HTML files
+# Access in browser at: http://localhost:8000
+#######################################################################
+python3 -m http.server 8000
+
