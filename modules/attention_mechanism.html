@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attention Mechanism Animation</title>
+    <title>Attention-Mechanismus Animation</title>
     <style>
         * {
             margin: 0;
@@ -120,6 +120,20 @@
 
         .animation-container.show {
             display: block;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 25px;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
         }
 
         @keyframes slideDown {
@@ -418,41 +432,46 @@
 </head>
 <body>
     <div class="container">
-        <h1>Attention Mechanism Visualization</h1>
-        <p class="subtitle">Understanding Q, K, V Vectors in Transformer Models</p>
+        <a href="04_attention.html" class="back-link">← Zurück zu Modul 4</a>
+        <h1>Attention-Mechanismus Visualisierung</h1>
+        <p class="subtitle">Q-, K- und V-Vektoren im Transformer nachvollziehen</p>
 
         <div class="explanation-text">
-            <h2>What is the Attention Mechanism?</h2>
+            <h2>Was ist der Attention-Mechanismus?</h2>
             <p>
-                The attention mechanism is a fundamental component of transformer models that allows the model to focus on different parts of the input when processing each element. It's like how humans pay attention to relevant words when reading a sentence.
+                Attention ist das Herzstück der Transformer-Modelle. Der Mechanismus erlaubt es,
+                sich bei jedem Schritt auf genau die Token zu konzentrieren, die für das aktuelle
+                Wort relevant sind – ähnlich wie wir Menschen beim Lesen bestimmte Wörter hervorheben.
             </p>
 
-            <h3>The Three Key Vectors: Query, Key, and Value</h3>
+            <h3>Die drei Schlüssel-Vektoren: Query, Key und Value</h3>
             <ul>
-                <li><strong>Query (Q):</strong> Represents "what I'm looking for" - the current token's request for information from other tokens</li>
-                <li><strong>Key (K):</strong> Represents "what I contain" - describes the content of each token that can be matched against queries</li>
-                <li><strong>Value (V):</strong> Represents "what I contribute" - the actual information that will be passed forward when a token is attended to</li>
+                <li><strong>Query (Q):</strong> „Wonach suche ich?“ – das aktuelle Token fordert Kontext an.</li>
+                <li><strong>Key (K):</strong> „Was habe ich anzubieten?“ – beschreibt den Inhalt jedes Tokens.</li>
+                <li><strong>Value (V):</strong> „Welche Information gebe ich weiter?“ – der Wert, der in die nächste Schicht fließt.</li>
             </ul>
 
-            <h3>How Attention Works:</h3>
+            <h3>So funktioniert Attention:</h3>
             <p>
-                1. <strong>Generate Q, K, V vectors:</strong> Each token in the input is transformed into three vectors through learned weight matrices<br>
-                2. <strong>Calculate similarity:</strong> Compute dot products between the Query and all Keys to determine relevance<br>
-                3. <strong>Scale and normalize:</strong> Scale by √d_k and apply softmax to get attention weights that sum to 1<br>
-                4. <strong>Weighted combination:</strong> Multiply each Value by its attention weight and sum to get the output
+                1. <strong>Q-, K-, V-Vektoren erzeugen:</strong> Jedes Token wird mit gelernten Matrizen multipliziert.<br>
+                2. <strong>Ähnlichkeit berechnen:</strong> Skalarprodukte zwischen Query und allen Keys bestimmen die Relevanz.<br>
+                3. <strong>Skalieren & Softmax:</strong> Division durch √d<sub>k</sub> und Softmax sorgen für stabile Gewichte.<br>
+                4. <strong>Gewichtete Summe:</strong> Values werden mit den Gewichten multipliziert und addiert → Kontextvektor.
             </p>
 
             <p>
-                The formula: <code>Attention(Q, K, V) = softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) · V</code>
+                Die Formel: <code>Attention(Q, K, V) = softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) · V</code>
             </p>
 
-            <h3>Why is this powerful?</h3>
+            <h3>Warum ist das so mächtig?</h3>
             <p>
-                Attention allows the model to dynamically focus on relevant context. For example, in "The animal didn't cross the street because it was too tired," attention helps the model understand that "it" refers to "animal" by computing high attention scores between these tokens.
+                Das Modell kann dynamisch erkennen, dass sich „Himmel“ auf „Farbe“ bezieht oder dass
+                Pronomen wie „er“ auf ein bestimmtes Nomen zeigen. Hohe Attention-Scores markieren
+                dabei den relevanten Kontext.
             </p>
         </div>
 
-        <button class="toggle-animation-btn" id="toggleAnimationBtn">Show Interactive Animation</button>
+        <button class="toggle-animation-btn" id="toggleAnimationBtn">Interaktive Animation anzeigen</button>
 
         <div class="animation-container" id="animationContainer">
             <div class="sentence">
@@ -460,13 +479,13 @@
             </div>
 
         <div class="controls">
-            <button id="startBtn">Start Animation</button>
-            <button id="nextBtn" disabled>Next Step</button>
-            <button id="resetBtn">Reset</button>
+            <button id="startBtn">Animation starten</button>
+            <button id="nextBtn" disabled>Nächster Schritt</button>
+            <button id="resetBtn">Zurücksetzen</button>
         </div>
 
         <div class="step-indicator" id="stepIndicator">
-            Click "Start Animation" to begin
+            Klicke auf „Animation starten“, um zu beginnen
         </div>
 
         <div class="visualization" id="visualization">
@@ -476,19 +495,19 @@
                 <div class="vectors-section">
                     <div class="vector-box query">
                         <div class="vector-title">Query (Q)</div>
-                        <p style="margin: 10px 0; font-size: 0.9em;">What I'm looking for</p>
+                        <p style="margin: 10px 0; font-size: 0.9em;">Wonach sucht das Token?</p>
                         <div class="vector-values" id="queryVector"></div>
                     </div>
 
                     <div class="vector-box key">
                         <div class="vector-title">Key (K)</div>
-                        <p style="margin: 10px 0; font-size: 0.9em;">What I contain</p>
+                        <p style="margin: 10px 0; font-size: 0.9em;">Was biete ich dem Kontext an?</p>
                         <div class="vector-values" id="keyVector"></div>
                     </div>
 
                     <div class="vector-box value">
                         <div class="vector-title">Value (V)</div>
-                        <p style="margin: 10px 0; font-size: 0.9em;">What I contribute</p>
+                        <p style="margin: 10px 0; font-size: 0.9em;">Welche Information liefere ich?</p>
                         <div class="vector-values" id="valueVector"></div>
                     </div>
                 </div>
@@ -500,7 +519,7 @@
                 <div class="explanation" id="explanation"></div>
 
                 <div class="attention-scores">
-                    <div class="attention-title">Attention Scores</div>
+                    <div class="attention-title">Attention-Gewichte</div>
                     <div class="score-bars" id="scoreBars"></div>
                 </div>
             </div>
@@ -508,10 +527,10 @@
             <div id="outputSection" style="display: none;">
                 <div class="arrow">↓</div>
                 <div class="output-section">
-                    <div class="output-title">Output: Weighted Sum of Values</div>
+                    <div class="output-title">Ausgabe: Gewichtete Summe der Values</div>
                     <div class="output-vector" id="outputVector"></div>
                     <div class="explanation" style="margin-top: 20px;">
-                        The final output is computed by multiplying each token's Value vector by its attention weight and summing them up. This creates a context-aware representation!
+                        Das Ergebnis entsteht, indem jeder Value-Vektor mit seinem Attention-Gewicht multipliziert und anschließend aufsummiert wird. So entsteht eine kontextabhängige Darstellung!
                     </div>
                 </div>
             </div>
@@ -528,13 +547,13 @@
             if (container.classList.contains('show')) {
                 container.classList.remove('show');
                 btn.classList.remove('active');
-                btn.textContent = 'Show Interactive Animation';
+                btn.textContent = 'Interaktive Animation anzeigen';
                 // Scroll to button
                 btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
                 container.classList.add('show');
                 btn.classList.add('active');
-                btn.textContent = 'Hide Interactive Animation';
+                btn.textContent = 'Interaktive Animation ausblenden';
                 // Scroll to animation
                 setTimeout(() => {
                     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -658,7 +677,7 @@
 
             outputDiv.innerHTML = `
                 <div style="margin-bottom: 15px; font-weight: bold; color: #667eea;">
-                    Context-aware representation for "${tokens[selectedTokenIndex]}":
+                    Kontextabhängige Darstellung für "${tokens[selectedTokenIndex]}":
                 </div>
                 ${output.map((v, i) => `
                     <div style="padding: 8px; margin: 5px 0; background: #f0f4ff; border-radius: 5px;">
@@ -670,49 +689,49 @@
 
         const steps = [
             {
-                indicator: "Step 1: Select a token to compute attention for",
+                indicator: "Schritt 1: Wähle ein Token, für das Attention berechnet wird",
                 action: () => {
                     selectToken(0);
                 }
             },
             {
-                indicator: "Step 2: Generate Q, K, V vectors for the selected token",
+                indicator: "Schritt 2: Q-, K- und V-Vektoren erzeugen",
                 action: () => {
                     document.getElementById('vectorsSection').style.display = 'block';
                     displayVectors();
                 }
             },
             {
-                indicator: "Step 3: Calculate attention scores (Q · K) for all tokens",
+                indicator: "Schritt 3: Attention-Scores (Q · K) für alle Tokens berechnen",
                 action: () => {
                     document.getElementById('attentionSection').style.display = 'block';
                     document.getElementById('formula').textContent =
                         'Attention(Q, K, V) = softmax(Q · Kᵀ / √d_k) · V';
                     document.getElementById('explanation').textContent =
-                        'We compute dot products between the Query vector and all Key vectors, then scale by √d_k. This measures how much attention each token should receive.';
+                        'Wir vergleichen den Query-Vektor mit allen Key-Vektoren, teilen durch √d_k und messen so, wie viel Aufmerksamkeit jedes Token erhält.';
                     calculateAttentionScores();
                 }
             },
             {
-                indicator: "Step 4: Apply softmax to normalize attention scores",
+                indicator: "Schritt 4: Softmax normalisiert die Scores",
                 action: () => {
                     document.getElementById('explanation').textContent =
-                        'Softmax converts raw scores into probabilities that sum to 1. Higher scores get more attention!';
+                        'Softmax wandelt rohe Scores in Wahrscheinlichkeiten um, die zusammen 1 ergeben. Hohe Scores bedeuten mehr Aufmerksamkeit.';
                     displayAttentionScores();
                 }
             },
             {
-                indicator: "Step 5: Compute weighted sum of Value vectors",
+                indicator: "Schritt 5: Gewichtete Summe der Value-Vektoren bilden",
                 action: () => {
                     document.getElementById('outputSection').style.display = 'block';
                     displayOutput();
                 }
             },
             {
-                indicator: "Animation complete! Try selecting different tokens to see how attention changes.",
+                indicator: "Fertig! Wähle nun andere Tokens, um unterschiedliche Attention-Verteilungen zu sehen.",
                 action: () => {
                     document.getElementById('nextBtn').disabled = true;
-                    // Enable token selection
+                    // Tokens aktivieren
                     document.querySelectorAll('.token').forEach(token => {
                         token.style.cursor = 'pointer';
                         token.onclick = (e) => {
@@ -747,7 +766,7 @@
             document.getElementById('vectorsSection').style.display = 'none';
             document.getElementById('attentionSection').style.display = 'none';
             document.getElementById('outputSection').style.display = 'none';
-            document.getElementById('stepIndicator').textContent = 'Click "Start Animation" to begin';
+            document.getElementById('stepIndicator').textContent = 'Klicke auf „Animation starten“, um zu beginnen';
             document.getElementById('tokensContainer').innerHTML = '';
         });
 

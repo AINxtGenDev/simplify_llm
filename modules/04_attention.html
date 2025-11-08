@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention is All You Need - Wie funktioniert ein LLM?</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .iframe-wrapper {
+            background: white;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+            padding: 15px;
+        }
+
+        .module-iframe {
+            width: 100%;
+            min-height: 820px;
+            border: none;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .module-iframe {
+                min-height: 960px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Attention is All You Need</h1>
+            <p>Self-Attention macht den Unterschied – so findet das Modell relevante Wörter für „Welche Farbe hat der Himmel?“</p>
+        </header>
+
+        <nav>
+            <a href="../index.html">🏠 Übersicht</a>
+            <a href="01_einfuehrung.html">1. Einführung</a>
+            <a href="02_tokenisierung.html">2. Tokenisierung</a>
+            <a href="03_embeddings.html">3. Embeddings</a>
+            <a href="04_attention.html" class="active">4. Attention</a>
+            <a href="05_softmax.html">5. Softmax</a>
+        </nav>
+
+        <div class="card fade-in">
+            <h2>Warum Self-Attention „alles“ ist</h2>
+            <p>
+                Attention ersetzt klassische rekurrente Schritte: Statt Position für Position zu laufen,
+                vergleicht das Modell jedes Token parallel mit allen anderen und vergibt Gewichte. Ein
+                hoher Wert bedeutet: „Dieses Wort liefert mir Kontext“. Für unseren Satz heißt das,
+                dass <strong>„Himmel“</strong> auf Wörter wie <strong>„Farbe“</strong> achtet, während
+                Funktionwörter wie <strong>„der“</strong> weniger Gewicht bekommen.
+            </p>
+            <div class="info-box">
+                <h4>💡 Merksatz</h4>
+                <p>
+                    Attention = <em>Ähnlichkeit</em> zwischen einem Query (aktuelles Wort) und allen Keys (andere Wörter).
+                    Das Ergebnis (Softmax-Gewichte) wird mit den Value-Vektoren kombiniert und erzeugt eine
+                    kontextreiche Darstellung für das nächste Netzteil.
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Der Prozess in fünf Schritten</h2>
+            <ol style="font-size: 1.1em; line-height: 2;">
+                <li><strong>Embeddings laden:</strong> Token-Vektoren stammen aus Modul 3.</li>
+                <li><strong>Q, K, V berechnen:</strong> Matrixmultiplikation mit gelernten Gewichten.</li>
+                <li><strong>Skalierte Punktprodukte:</strong> <code>Q · Kᵀ / √dₖ</code> misst die Relevanz.</li>
+                <li><strong>Softmax anwenden:</strong> Scores werden zu Wahrscheinlichkeiten (siehe Modul 5).</li>
+                <li><strong>Gewichtete Summe:</strong> Werte (V) werden gemäß Gewicht addiert → neues Kontext-Embedding.</li>
+            </ol>
+            <div class="info-box warning">
+                <h4>⚠️ Tipp für Trainer:innen</h4>
+                <p>
+                    Lass Teilnehmende zuerst manuell überlegen, welches Wort für „Himmel“ wichtig ist,
+                    bevor sie die Animation starten. Das stärkt das Verständnis für die Gewichtung.
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Interaktive Visualisierung</h2>
+            <p>
+                Die folgende Einbettung lädt das ausführliche Visualisierungstool. Du kannst Tokens auswählen,
+                Schritt für Schritt durch Q/K/V gehen und beobachten, wie die Softmax-Gewichte entstehen.
+            </p>
+            <div class="iframe-wrapper">
+                <iframe
+                    src="attention_mechanism.html"
+                    title="Interaktive Attention-Animation"
+                    class="module-iframe"
+                    loading="lazy"
+                ></iframe>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.95em; color: #475569;">
+                💻 Hinweis: Für das beste Erlebnis im Vollbild öffnen oder direkt in einem neuen Tab starten.
+            </p>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Worauf du achten solltest</h2>
+            <ul style="line-height: 1.9; font-size: 1.05em;">
+                <li>Die Summe der Attention-Gewichte pro Schritt ist immer 1 (Softmax-Eigenschaft).</li>
+                <li>Selbst unscheinbare Wörter können wichtig werden, falls sie in anderen Kontexten relevant sind.</li>
+                <li>Multi-Head Attention wiederholt diesen Ablauf parallel mit unterschiedlichen Gewichtsmatrizen.</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+            <a href="03_embeddings.html" class="btn btn-secondary">
+                ← Zurück zu Embeddings
+            </a>
+            <a href="05_softmax.html" class="btn">
+                Weiter zu Softmax →
+            </a>
+        </div>
+
+        <footer style="margin-top: 40px;">
+            <p>LLM Erklärung - Modul 4: Attention is All You Need | Beispielsatz: "Welche Farbe hat der Himmel?"</p>
+        </footer>
+    </div>
+</body>
+</html>

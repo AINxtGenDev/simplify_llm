@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softmax & Wahrscheinlichkeiten - Wie funktioniert ein LLM?</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .iframe-wrapper {
+            background: white;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+            padding: 15px;
+        }
+
+        .module-iframe {
+            width: 100%;
+            min-height: 900px;
+            border: none;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .module-iframe {
+                min-height: 1100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📐 Softmax & Wahrscheinlichkeiten</h1>
+            <p>Vom Logit zum Ergebnis – so wählt das LLM das wahrscheinlichste nächste Token für unseren Satz.</p>
+        </header>
+
+        <nav>
+            <a href="../index.html">🏠 Übersicht</a>
+            <a href="01_einfuehrung.html">1. Einführung</a>
+            <a href="02_tokenisierung.html">2. Tokenisierung</a>
+            <a href="03_embeddings.html">3. Embeddings</a>
+            <a href="04_attention.html">4. Attention</a>
+            <a href="05_softmax.html" class="active">5. Softmax</a>
+        </nav>
+
+        <div class="card fade-in">
+            <h2>Warum Softmax unverzichtbar ist</h2>
+            <p>
+                Nach Attention, Feed-Forward und weiteren Schichten liefert das Modell sogenannte
+                <strong>Logits</strong> – unskalierte Werte für jedes Token im Vokabular. Softmax
+                verwandelt diese Werte in eine Wahrscheinlichkeitsverteilung, indem es exponentiert,
+                normalisiert und so sicherstellt, dass alle Wahrscheinlichkeiten zwischen 0 und 1 liegen
+                und zusammen 1 ergeben.
+            </p>
+            <div class="info-box">
+                <h4>🔢 Formel</h4>
+                <p>
+                    <code>P(token_i) = exp(logit_i / T) / Σ exp(logit_j / T)</code><br>
+                    Mit <strong>T</strong> als Temperatur. Je kleiner T, desto „spitzer“ die Verteilung.
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Softmax auf unseren Beispielsatz anwenden</h2>
+            <p>
+                Für „Welche Farbe hat der Himmel?“ berechnet das Modell u. a. Logits für „blau“, „grau“,
+                „grün“ usw. Softmax sorgt dafür, dass sich diese Werte wie Wahrscheinlichkeiten verhalten
+                und wir kontrolliert ziehen können (Greedy, Top-k, Top-p).
+            </p>
+            <ul style="line-height: 1.9; font-size: 1.05em;">
+                <li><strong>Maskierung:</strong> Tokens, die nicht erlaubt sind (z. B. bereits verwendete oder Padding), erhalten -∞.</li>
+                <li><strong>Temperatur:</strong> Werte &gt; 1 machen die Verteilung flacher → mehr Diversität.</li>
+                <li><strong>Sampling:</strong> Aufbauend auf Softmax können Strategien wie Top-k angewendet werden.</li>
+            </ul>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Deep Dive Visualisierung</h2>
+            <p>
+                Das folgende Tool zeigt Softmax, Attention und Kontrollparameter (Temperatur, Masken) in einer
+                dunklen Oberfläche. Nutze es für Demos oder um alternative Strategien auszuprobieren.
+            </p>
+            <div class="iframe-wrapper">
+                <iframe
+                    src="softmax.html"
+                    title="Softmax Deep Dive"
+                    class="module-iframe"
+                    loading="lazy"
+                ></iframe>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.95em; color: #475569;">
+                🎥 Ergänze hier Screenshots oder Screencasts aus deiner Präsentation – der Rahmen ist bereits vorbereitet.
+            </p>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Checkliste vor dem nächsten Modul</h2>
+            <ul style="line-height: 1.9; font-size: 1.05em;">
+                <li>Logits verstanden? → Rohwerte können negativ oder positiv sein.</li>
+                <li>Softmax-Kurven geübt? → Temperatur und Maskierung ausprobieren.</li>
+                <li>Sampling vorbereitet? → Notiere Fragen für das Modul zu Strategien.</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+            <a href="04_attention.html" class="btn btn-secondary">
+                ← Zurück zu Attention
+            </a>
+            <a href="../index.html" class="btn">
+                Zur Modulübersicht →
+            </a>
+        </div>
+
+        <footer style="margin-top: 40px;">
+            <p>LLM Erklärung - Modul 5: Softmax & Wahrscheinlichkeiten | Beispielsatz: "Welche Farbe hat der Himmel?"</p>
+        </footer>
+    </div>
+</body>
+</html>
