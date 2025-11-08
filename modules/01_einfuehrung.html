@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einführung - Wie funktioniert ein LLM?</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Wie funktioniert ein Large Language Model (LLM)?</h1>
+            <p>Eine interaktive Erklärung am Beispiel</p>
+        </header>
+
+        <nav>
+            <a href="../index.html">🏠 Übersicht</a>
+            <a href="01_einfuehrung.html" class="active">1. Einführung</a>
+            <a href="02_tokenisierung.html">2. Tokenisierung</a>
+            <a href="03_embeddings.html">3. Embeddings</a>
+        </nav>
+
+        <div class="card fade-in">
+            <h2>Was ist ein Large Language Model?</h2>
+
+            <p>
+                Ein Large Language Model (LLM) wie GPT generiert Text, indem es den Eingabekontext analysiert.
+            </p>
+
+            <p>
+                Basierend auf antrainierten <strong>Gewichten (Parametern)</strong> gibt das Modell dann
+                das Folgewort mit der höchsten Wahrscheinlichkeit aus.
+            </p>
+
+            <p>
+                <strong>Wie funktioniert die Vorhersage?</strong><br>
+                Die Vorhersage stützt sich auf Gewichtungen, die das Modell während des Trainings gelernt hat.
+            </p>
+
+            <p>
+                Diese Gewichtungen repräsentieren Beziehungen zwischen Wörtern und Phrasen.
+                Sie wurden aus einem großen Korpus an Textdaten erlernt.
+            </p>
+
+            <p>
+                Das Modell bestimmt damit, welche Wörter als Folge des Eingabekontextes
+                die höchste Wahrscheinlichkeit haben.
+            </p>
+
+            <p>
+                Dabei werden nicht nur einzelne Wörter betrachtet, sondern auch ganze Satzstrukturen und Kontexte.
+                So entstehen <strong>kohärente</strong> (= stimmige, logische) und relevante Textausgaben.
+            </p>
+
+            <div class="info-box">
+                <h4>💡 Was bedeutet "kohärent"?</h4>
+                <p>
+                    „Kohärent" beschreibt etwas, das <strong>stimmig, logisch und einheitlich strukturiert</strong> ist.
+                    Ein kohärenter Text ergibt Sinn und folgt einer nachvollziehbaren Logik.
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Unser Beispielsatz</h2>
+
+            <p>
+                Um zu verstehen, wie ein LLM funktioniert, werden wir in den folgenden Modulen
+                Schritt für Schritt analysieren, wie das Modell mit diesem Beispielsatz umgeht:
+            </p>
+
+            <div class="example-sentence">
+                Welche Farbe hat der Himmel?
+            </div>
+
+            <p>
+                Anhand dieses einfachen Satzes werden wir folgende Schritte durchlaufen:
+            </p>
+
+            <ol style="font-size: 1.1em; line-height: 2;">
+                <li><strong>Tokenisierung:</strong> Wie wird der Satz in einzelne Bausteine (Tokens) zerlegt?</li>
+                <li><strong>Embeddings:</strong> Wie werden diese Tokens in numerische Vektoren umgewandelt?</li>
+                <li><strong>Attention:</strong> Wie erkennt das Modell, welche Wörter zusammengehören?</li>
+                <li><strong>Transformer:</strong> Wie verarbeitet das Modell die Information?</li>
+                <li><strong>Vorhersage:</strong> Wie berechnet das Modell Wahrscheinlichkeiten für das nächste Wort?</li>
+            </ol>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Der grundlegende Ablauf</h2>
+
+            <div class="interactive-box">
+                <h4>Vereinfachter Prozess:</h4>
+
+                <div style="font-size: 1.2em; line-height: 2.5; padding: 20px;">
+                    📝 <strong>Eingabe:</strong> "Welche Farbe hat der Himmel?"
+                    <br>
+                    ⬇️
+                    <br>
+                    🔤 <strong>Tokenisierung:</strong> ["Welche", "Farbe", "hat", "der", "Himmel", "?"]
+                    <br>
+                    ⬇️
+                    <br>
+                    🔢 <strong>Embeddings:</strong> Jedes Token wird zu einem Zahlenvektor
+                    <br>
+                    ⬇️
+                    <br>
+                    🧠 <strong>Transformer:</strong> Neuronales Netzwerk verarbeitet die Vektoren
+                    <br>
+                    ⬇️
+                    <br>
+                    📊 <strong>Wahrscheinlichkeiten:</strong> Berechnung für mögliche Folgewörter
+                    <br>
+                    ⬇️
+                    <br>
+                    ✅ <strong>Ausgabe:</strong> Das wahrscheinlichste Wort (z.B. "blau")
+                </div>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Vorschau auf die nächsten Schritte</h2>
+
+            <p>
+                Im nächsten Modul (<strong>Tokenisierung</strong>) werden wir uns genau ansehen,
+                wie unser Beispielsatz in einzelne Tokens zerlegt wird und warum dies ein wichtiger
+                erster Schritt ist.
+            </p>
+
+            <div class="info-box warning">
+                <h4>⚠️ Wichtig zu verstehen:</h4>
+                <p>
+                    Ein LLM "versteht" Text nicht im menschlichen Sinne. Es erkennt Muster und
+                    statistische Zusammenhänge aus den Trainingsdaten. Die Ausgabe basiert auf
+                    Wahrscheinlichkeiten, nicht auf echtem Verständnis oder Bewusstsein.
+                </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="02_tokenisierung.html" class="btn">
+                    Weiter zur Tokenisierung →
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>LLM Erklärung - Modul 1: Einführung | Navigation: <a href="02_tokenisierung.html">Nächstes Modul →</a></p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Erklärung - Wie funktioniert ein Large Language Model?</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+            border-left-color: var(--secondary-color);
+        }
+
+        .module-card h3 {
+            color: var(--primary-color);
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-card .module-number {
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .module-card p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+
+        .module-card .module-status {
+            margin-top: 15px;
+            padding: 8px 15px;
+            background: #dbeafe;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .module-card.completed .module-status {
+            background: #d1fae5;
+            color: var(--success-color);
+        }
+
+        .module-card.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .module-card.coming-soon:hover {
+            transform: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-section h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .hero-section p {
+            font-size: 1.4em;
+            opacity: 0.95;
+        }
+
+        .example-preview {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero-section fade-in">
+            <h1>🤖 Wie funktioniert ein LLM?</h1>
+            <p>
+                Eine interaktive Schritt-für-Schritt Erklärung, wie Large Language Models
+                Text verstehen und generieren
+            </p>
+            <div class="example-preview">
+                📝 Unser Beispielsatz: "Welche Farbe hat der Himmel?"
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>🎯 Über diese Lernreihe</h2>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                Diese interaktive Erklärung zeigt dir Schritt für Schritt, wie ein Large Language Model (LLM)
+                funktioniert. Anhand des konkreten Beispielsatzes <strong>"Welche Farbe hat der Himmel?"</strong>
+                werden wir jeden Prozessschritt detailliert durchgehen - von der Tokenisierung bis zur
+                finalen Textgenerierung.
+            </p>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <h4>💡 Was du lernen wirst:</h4>
+                <ul style="line-height: 1.8; font-size: 1.05em;">
+                    <li>Wie Text in Tokens zerlegt wird (Tokenisierung)</li>
+                    <li>Wie Tokens zu numerischen Vektoren werden (Embeddings)</li>
+                    <li>Wie das Modell Zusammenhänge erkennt (Attention)</li>
+                    <li>Wie die Transformer-Architektur funktioniert</li>
+                    <li>Wie Wahrscheinlichkeiten für das nächste Wort berechnet werden</li>
+                    <li>Wie das Modell trainiert wird</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>📚 Lernmodule - Grundlagen</h2>
+            <p style="font-size: 1.1em; margin-bottom: 20px;">
+                Starte mit den Grundlagen und arbeite dich durch die Module.
+                Jedes Modul baut auf dem vorherigen auf.
+            </p>
+
+            <div class="module-grid">
+                <a href="modules/01_einfuehrung.html" class="module-card completed">
+                    <h3>
+                        <span class="module-number">1</span>
+                        Einführung
+                    </h3>
+                    <p>
+                        Was ist ein Large Language Model? Grundlegendes Verständnis und Überblick
+                        über den gesamten Prozess der Textverarbeitung und -generierung.
+                    </p>
+                    <div class="module-status">✅ Verfügbar</div>
+                </a>
+
+                <a href="modules/02_tokenisierung.html" class="module-card completed">
+                    <h3>
+                        <span class="module-number">2</span>
+                        Tokenisierung
+                    </h3>
+                    <p>
+                        Wie wird Text in einzelne Bausteine (Tokens) zerlegt? Verstehe das
+                        Vokabular und wie unser Beispielsatz in 6 Tokens aufgeteilt wird.
+                    </p>
+                    <div class="module-status">✅ Verfügbar</div>
+                </a>
+
+                <a href="modules/03_embeddings.html" class="module-card completed">
+                    <h3>
+                        <span class="module-number">3</span>
+                        Embeddings
+                    </h3>
+                    <p>
+                        Von Tokens zu numerischen Vektoren. Lerne, wie jedes Token in einen
+                        4-dimensionalen Vektor umgewandelt wird und warum ähnliche Wörter ähnliche Vektoren haben.
+                    </p>
+                    <div class="module-status">✅ Verfügbar</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>🏗️ Kommende Module</h2>
+            <p style="font-size: 1.1em; margin-bottom: 20px;">
+                Diese Module sind in Planung und werden bald verfügbar sein:
+            </p>
+
+            <div class="module-grid">
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">4</span>
+                        Attention-Mechanismus
+                    </h3>
+                    <p>
+                        Wie erkennt das Modell, welche Wörter zusammengehören? Der Attention-Mechanismus
+                        bestimmt, welche Tokens für die Vorhersage wichtig sind.
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">5</span>
+                        Transformer-Architektur
+                    </h3>
+                    <p>
+                        Die Gesamtarchitektur des Modells. Multi-Head Attention, Feed-Forward Networks
+                        und wie alles zusammenarbeitet.
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">6</span>
+                        Parameter & Gewichte
+                    </h3>
+                    <p>
+                        Was sind die Millionen von Parametern? Wie werden sie gespeichert und
+                        warum brauchen größere Modelle mehr Parameter?
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">7</span>
+                        Forward Pass
+                    </h3>
+                    <p>
+                        Der komplette Durchlauf: Wie fließen die Daten vom Input zum Output?
+                        Schritt-für-Schritt Visualisierung des gesamten Prozesses.
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">8</span>
+                        Softmax & Wahrscheinlichkeiten
+                    </h3>
+                    <p>
+                        Von Logits zu Wahrscheinlichkeiten. Die Softmax-Funktion berechnet, wie
+                        wahrscheinlich jedes mögliche nächste Wort ist.
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">9</span>
+                        Sampling-Strategien
+                    </h3>
+                    <p>
+                        Temperature, Top-k, Top-p - Wie wird aus Wahrscheinlichkeiten das
+                        tatsächliche nächste Wort ausgewählt?
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+
+                <div class="module-card coming-soon">
+                    <h3>
+                        <span class="module-number">10</span>
+                        Training & Optimierung
+                    </h3>
+                    <p>
+                        Wie lernt das Modell? Pre-Training, Loss-Funktionen und wie die
+                        Gewichte optimiert werden.
+                    </p>
+                    <div class="module-status">🔜 In Vorbereitung</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>🚀 Jetzt starten!</h2>
+            <p style="font-size: 1.1em; margin-bottom: 25px;">
+                Bereit, zu verstehen, wie LLMs funktionieren? Beginne mit der Einführung:
+            </p>
+
+            <div style="text-align: center;">
+                <a href="modules/01_einfuehrung.html" class="btn" style="font-size: 1.2em; padding: 15px 35px;">
+                    📖 Zur Einführung starten →
+                </a>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>📊 Projektressourcen</h2>
+            <div class="info-box">
+                <h4>📁 Verfügbare Dateien:</h4>
+                <ul style="line-height: 1.8;">
+                    <li><strong>Vokabular-Daten:</strong> <code>data/vocabulary.json</code> - Vollständiges Wörterbuch mit Token-IDs und Embeddings</li>
+                    <li><strong>Styles:</strong> <code>css/style.css</code> - Globale Styles für alle Module</li>
+                    <li><strong>Module:</strong> <code>modules/</code> - Alle Lernmodule (HTML)</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer>
+            <p>🤖 LLM Erklärung - Interaktive Lernreihe | Beispielsatz: "Welche Farbe hat der Himmel?"</p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #94a3b8;">
+                Diese Erklärung verwendet vereinfachte Beispiele (4-dimensionale Embeddings, 30-Token-Vokabular).
+                Echte LLMs arbeiten mit deutlich höheren Dimensionen (768+) und größeren Vokabularen (50.000+).
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,203 @@
+{
+  "info": {
+    "description": "Vereinfachtes Vokabular für LLM-Erklärung",
+    "example_sentence": "Welche Farbe hat der Himmel?",
+    "embedding_dimension": 4,
+    "vocabulary_size": 30
+  },
+  "tokens": {
+    "[PAD]": {
+      "id": 0,
+      "embedding": [0.0, 0.0, 0.0, 0.0],
+      "frequency": 0,
+      "category": "special"
+    },
+    "[START]": {
+      "id": 1,
+      "embedding": [1.0, 0.0, 0.0, 0.0],
+      "frequency": 0,
+      "category": "special"
+    },
+    "[END]": {
+      "id": 2,
+      "embedding": [0.0, 1.0, 0.0, 0.0],
+      "frequency": 0,
+      "category": "special"
+    },
+    "[UNK]": {
+      "id": 3,
+      "embedding": [0.0, 0.0, 1.0, 0.0],
+      "frequency": 0,
+      "category": "special"
+    },
+    "Welche": {
+      "id": 4,
+      "embedding": [0.8, 0.3, -0.2, 0.5],
+      "frequency": 245,
+      "category": "fragwort"
+    },
+    "Farbe": {
+      "id": 5,
+      "embedding": [0.2, 0.7, 0.6, -0.3],
+      "frequency": 189,
+      "category": "nomen"
+    },
+    "hat": {
+      "id": 6,
+      "embedding": [0.1, -0.2, 0.4, 0.8],
+      "frequency": 1523,
+      "category": "verb"
+    },
+    "der": {
+      "id": 7,
+      "embedding": [-0.1, 0.1, -0.1, 0.2],
+      "frequency": 5234,
+      "category": "artikel"
+    },
+    "Himmel": {
+      "id": 8,
+      "embedding": [0.3, 0.8, -0.5, 0.4],
+      "frequency": 156,
+      "category": "nomen"
+    },
+    "?": {
+      "id": 9,
+      "embedding": [0.9, 0.1, 0.0, -0.3],
+      "frequency": 3421,
+      "category": "interpunktion"
+    },
+    "blau": {
+      "id": 10,
+      "embedding": [0.25, 0.75, 0.5, -0.2],
+      "frequency": 234,
+      "category": "adjektiv"
+    },
+    "grau": {
+      "id": 11,
+      "embedding": [0.2, 0.65, 0.4, -0.15],
+      "frequency": 178,
+      "category": "adjektiv"
+    },
+    "ist": {
+      "id": 12,
+      "embedding": [0.15, -0.25, 0.45, 0.75],
+      "frequency": 4567,
+      "category": "verb"
+    },
+    "Der": {
+      "id": 13,
+      "embedding": [-0.1, 0.15, -0.05, 0.25],
+      "frequency": 4891,
+      "category": "artikel"
+    },
+    "Die": {
+      "id": 14,
+      "embedding": [-0.05, 0.12, -0.08, 0.22],
+      "frequency": 5012,
+      "category": "artikel"
+    },
+    ".": {
+      "id": 15,
+      "embedding": [0.8, 0.0, 0.1, -0.2],
+      "frequency": 8934,
+      "category": "interpunktion"
+    },
+    "rot": {
+      "id": 16,
+      "embedding": [0.3, 0.7, 0.45, -0.25],
+      "frequency": 198,
+      "category": "adjektiv"
+    },
+    "grün": {
+      "id": 17,
+      "embedding": [0.22, 0.72, 0.48, -0.22],
+      "frequency": 167,
+      "category": "adjektiv"
+    },
+    "Gras": {
+      "id": 18,
+      "embedding": [0.25, 0.75, -0.45, 0.35],
+      "frequency": 134,
+      "category": "nomen"
+    },
+    "Sonne": {
+      "id": 19,
+      "embedding": [0.35, 0.85, -0.55, 0.45],
+      "frequency": 289,
+      "category": "nomen"
+    },
+    "gelb": {
+      "id": 20,
+      "embedding": [0.28, 0.73, 0.52, -0.18],
+      "frequency": 145,
+      "category": "adjektiv"
+    },
+    "Was": {
+      "id": 21,
+      "embedding": [0.75, 0.25, -0.15, 0.45],
+      "frequency": 567,
+      "category": "fragwort"
+    },
+    "Wie": {
+      "id": 22,
+      "embedding": [0.77, 0.28, -0.18, 0.48],
+      "frequency": 489,
+      "category": "fragwort"
+    },
+    "Wo": {
+      "id": 23,
+      "embedding": [0.79, 0.26, -0.2, 0.47],
+      "frequency": 412,
+      "category": "fragwort"
+    },
+    "eine": {
+      "id": 24,
+      "embedding": [-0.08, 0.13, -0.06, 0.21],
+      "frequency": 3245,
+      "category": "artikel"
+    },
+    "schön": {
+      "id": 25,
+      "embedding": [0.4, 0.6, 0.3, 0.1],
+      "frequency": 276,
+      "category": "adjektiv"
+    },
+    "hell": {
+      "id": 26,
+      "embedding": [0.35, 0.65, 0.35, -0.1],
+      "frequency": 198,
+      "category": "adjektiv"
+    },
+    "dunkel": {
+      "id": 27,
+      "embedding": [0.3, 0.55, 0.25, -0.15],
+      "frequency": 212,
+      "category": "adjektiv"
+    },
+    "heute": {
+      "id": 28,
+      "embedding": [0.5, -0.3, 0.2, 0.6],
+      "frequency": 567,
+      "category": "adverb"
+    },
+    "wolkig": {
+      "id": 29,
+      "embedding": [0.32, 0.78, -0.48, 0.38],
+      "frequency": 89,
+      "category": "adjektiv"
+    }
+  },
+  "example_tokenization": {
+    "input": "Welche Farbe hat der Himmel?",
+    "tokens": ["Welche", "Farbe", "hat", "der", "Himmel", "?"],
+    "token_ids": [4, 5, 6, 7, 8, 9],
+    "embeddings": [
+      [0.8, 0.3, -0.2, 0.5],
+      [0.2, 0.7, 0.6, -0.3],
+      [0.1, -0.2, 0.4, 0.8],
+      [-0.1, 0.1, -0.1, 0.2],
+      [0.3, 0.8, -0.5, 0.4],
+      [0.9, 0.1, 0.0, -0.3]
+    ]
+  }
+}

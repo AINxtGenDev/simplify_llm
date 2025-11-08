@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokenisierung - Wie funktioniert ein LLM?</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔤 Tokenisierung</h1>
+            <p>Vom Text zu einzelnen Bausteinen</p>
+        </header>
+
+        <nav>
+            <a href="../index.html">🏠 Übersicht</a>
+            <a href="01_einfuehrung.html">1. Einführung</a>
+            <a href="02_tokenisierung.html" class="active">2. Tokenisierung</a>
+            <a href="03_embeddings.html">3. Embeddings</a>
+        </nav>
+
+        <div class="card fade-in">
+            <h2>Was ist Tokenisierung?</h2>
+
+            <p>
+                Bevor ein LLM Text verarbeiten kann, muss der Text in kleinere Einheiten zerlegt werden,
+                die sogenannten <strong>Tokens</strong>. Ein Token kann ein ganzes Wort, ein Wortteil,
+                ein Satzzeichen oder ein Leerzeichen sein.
+            </p>
+
+            <div class="info-box">
+                <h4>💡 Warum Tokenisierung?</h4>
+                <p>
+                    Computer können nicht direkt mit Text arbeiten. Sie brauchen Zahlen. Die Tokenisierung
+                    ist der erste Schritt, um Text in eine Form zu bringen, die das Modell verarbeiten kann.
+                    Jedes Token bekommt eine eindeutige ID (Nummer) aus einem Vokabular zugewiesen.
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Unser Beispielsatz wird tokenisiert</h2>
+
+            <div class="example-sentence">
+                Welche Farbe hat der Himmel?
+            </div>
+
+            <h3>⬇️ Tokenisierung</h3>
+
+            <div class="token-container">
+                <div class="token">
+                    Welche
+                    <span class="token-id">4</span>
+                </div>
+                <div class="token">
+                    Farbe
+                    <span class="token-id">5</span>
+                </div>
+                <div class="token">
+                    hat
+                    <span class="token-id">6</span>
+                </div>
+                <div class="token">
+                    der
+                    <span class="token-id">7</span>
+                </div>
+                <div class="token">
+                    Himmel
+                    <span class="token-id">8</span>
+                </div>
+                <div class="token">
+                    ?
+                    <span class="token-id">9</span>
+                </div>
+            </div>
+
+            <div class="info-box success">
+                <h4>✅ Ergebnis:</h4>
+                <p>
+                    Unser Satz wurde in <strong>6 Tokens</strong> zerlegt. Jedes Token hat eine
+                    eindeutige ID aus unserem Vokabular erhalten: <code>[4, 5, 6, 7, 8, 9]</code>
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Das Vokabular (Wörterbuch)</h2>
+
+            <p>
+                Jedes LLM hat ein festes Vokabular - eine Liste aller möglichen Tokens, die es kennt.
+                Bei echten LLMs enthält dieses Vokabular oft 50.000 bis 100.000 verschiedene Tokens.
+                Für unser Beispiel verwenden wir ein vereinfachtes Vokabular mit 30 Tokens.
+            </p>
+
+            <h3>Unser vereinfachtes Vokabular:</h3>
+
+            <table class="vocab-table">
+                <thead>
+                    <tr>
+                        <th>Token-ID</th>
+                        <th>Token</th>
+                        <th>Kategorie</th>
+                        <th>Häufigkeit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background-color: #fef3c7;">
+                        <td><strong>0</strong></td>
+                        <td><code>[PAD]</code></td>
+                        <td>Special Token</td>
+                        <td>-</td>
+                    </tr>
+                    <tr style="background-color: #fef3c7;">
+                        <td><strong>1</strong></td>
+                        <td><code>[START]</code></td>
+                        <td>Special Token</td>
+                        <td>-</td>
+                    </tr>
+                    <tr style="background-color: #fef3c7;">
+                        <td><strong>2</strong></td>
+                        <td><code>[END]</code></td>
+                        <td>Special Token</td>
+                        <td>-</td>
+                    </tr>
+                    <tr style="background-color: #fef3c7;">
+                        <td><strong>3</strong></td>
+                        <td><code>[UNK]</code></td>
+                        <td>Special Token (Unknown)</td>
+                        <td>-</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>4</strong></td>
+                        <td><strong>Welche</strong></td>
+                        <td>Fragewort</td>
+                        <td>245</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>5</strong></td>
+                        <td><strong>Farbe</strong></td>
+                        <td>Nomen</td>
+                        <td>189</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>6</strong></td>
+                        <td><strong>hat</strong></td>
+                        <td>Verb</td>
+                        <td>1523</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>7</strong></td>
+                        <td><strong>der</strong></td>
+                        <td>Artikel</td>
+                        <td>5234</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>8</strong></td>
+                        <td><strong>Himmel</strong></td>
+                        <td>Nomen</td>
+                        <td>156</td>
+                    </tr>
+                    <tr style="background-color: #dbeafe;">
+                        <td><strong>9</strong></td>
+                        <td><strong>?</strong></td>
+                        <td>Interpunktion</td>
+                        <td>3421</td>
+                    </tr>
+                    <tr>
+                        <td><strong>10</strong></td>
+                        <td>blau</td>
+                        <td>Adjektiv</td>
+                        <td>234</td>
+                    </tr>
+                    <tr>
+                        <td><strong>11</strong></td>
+                        <td>grau</td>
+                        <td>Adjektiv</td>
+                        <td>178</td>
+                    </tr>
+                    <tr>
+                        <td><strong>12</strong></td>
+                        <td>ist</td>
+                        <td>Verb</td>
+                        <td>4567</td>
+                    </tr>
+                    <tr>
+                        <td><strong>13</strong></td>
+                        <td>Der</td>
+                        <td>Artikel</td>
+                        <td>4891</td>
+                    </tr>
+                    <tr>
+                        <td><strong>14</strong></td>
+                        <td>Die</td>
+                        <td>Artikel</td>
+                        <td>4012</td>
+                    </tr>
+                    <tr>
+                        <td><strong>15</strong></td>
+                        <td>.</td>
+                        <td>Interpunktion</td>
+                        <td>8934</td>
+                    </tr>
+                    <tr>
+                        <td><strong>16</strong></td>
+                        <td>rot</td>
+                        <td>Adjektiv</td>
+                        <td>198</td>
+                    </tr>
+                    <tr>
+                        <td><strong>17</strong></td>
+                        <td>grün</td>
+                        <td>Adjektiv</td>
+                        <td>167</td>
+                    </tr>
+                    <tr>
+                        <td><strong>18</strong></td>
+                        <td>Gras</td>
+                        <td>Nomen</td>
+                        <td>134</td>
+                    </tr>
+                    <tr>
+                        <td><strong>19</strong></td>
+                        <td>Sonne</td>
+                        <td>Nomen</td>
+                        <td>289</td>
+                    </tr>
+                    <tr>
+                        <td><strong>20</strong></td>
+                        <td>gelb</td>
+                        <td>Adjektiv</td>
+                        <td>145</td>
+                    </tr>
+                    <tr>
+                        <td>...</td>
+                        <td colspan="3"><em>und weitere Tokens bis ID 29</em></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box">
+                <h4>📊 Erklärung der Spalten:</h4>
+                <ul style="line-height: 1.8;">
+                    <li><strong>Token-ID:</strong> Eindeutige Nummer für jedes Token (0-29 in unserem Beispiel)</li>
+                    <li><strong>Token:</strong> Das Wort oder Zeichen selbst</li>
+                    <li><strong>Kategorie:</strong> Grammatische Klassifizierung</li>
+                    <li><strong>Häufigkeit:</strong> Wie oft das Token in den Trainingsdaten vorkam</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Spezielle Tokens</h2>
+
+            <p>
+                Neben normalen Wörtern gibt es auch <strong>spezielle Tokens</strong>,
+                die besondere Funktionen haben:
+            </p>
+
+            <div class="interactive-box">
+                <div style="line-height: 2.2; font-size: 1.1em;">
+                    <p><code>[PAD]</code> (ID: 0) - Padding-Token zum Auffüllen von Sequenzen auf gleiche Länge</p>
+                    <p><code>[START]</code> (ID: 1) - Markiert den Beginn einer Sequenz</p>
+                    <p><code>[END]</code> (ID: 2) - Markiert das Ende einer Sequenz</p>
+                    <p><code>[UNK]</code> (ID: 3) - Unknown-Token für unbekannte Wörter, die nicht im Vokabular sind</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <h4>⚠️ Was passiert mit unbekannten Wörtern?</h4>
+                <p>
+                    Wenn ein Wort nicht im Vokabular ist, wird es durch das <code>[UNK]</code>-Token ersetzt
+                    oder in kleinere bekannte Sub-Token zerlegt (z.B. "Computerbildschirm" → ["Computer", "bildschirm"]).
+                </p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Visualisierung: Von Text zu Token-IDs</h2>
+
+            <div class="interactive-box">
+                <h4>Schritt-für-Schritt Transformation:</h4>
+
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <div style="font-size: 1.3em; margin-bottom: 20px;">
+                        <strong>Eingabe:</strong> <span style="color: #2563eb;">"Welche Farbe hat der Himmel?"</span>
+                    </div>
+
+                    <div style="font-size: 1.2em; margin-bottom: 20px;">
+                        ⬇️ <strong>Tokenisierung</strong>
+                    </div>
+
+                    <div style="font-size: 1.1em; margin-bottom: 20px; font-family: 'Courier New', monospace;">
+                        <strong>Tokens:</strong> ["Welche", "Farbe", "hat", "der", "Himmel", "?"]
+                    </div>
+
+                    <div style="font-size: 1.2em; margin-bottom: 20px;">
+                        ⬇️ <strong>Mapping zu IDs</strong>
+                    </div>
+
+                    <div style="font-size: 1.1em; font-family: 'Courier New', monospace; background: #f1f5f9; padding: 15px; border-radius: 6px;">
+                        <strong>Token-IDs:</strong> [4, 5, 6, 7, 8, 9]
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <h2>Zusammenfassung</h2>
+
+            <div class="info-box success">
+                <h4>✅ Was haben wir gelernt?</h4>
+                <ul style="line-height: 1.8; font-size: 1.05em;">
+                    <li>Tokenisierung zerlegt Text in einzelne Bausteine (Tokens)</li>
+                    <li>Jedes Token erhält eine eindeutige ID aus dem Vokabular</li>
+                    <li>Das Vokabular ist eine feste Liste aller bekannten Tokens</li>
+                    <li>Unser Beispielsatz wird in 6 Tokens mit den IDs [4, 5, 6, 7, 8, 9] zerlegt</li>
+                    <li>Es gibt spezielle Tokens für besondere Zwecke ([PAD], [START], [END], [UNK])</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+                <a href="01_einfuehrung.html" class="btn btn-secondary">
+                    ← Zurück zur Einführung
+                </a>
+                <a href="03_embeddings.html" class="btn">
+                    Weiter zu Embeddings →
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>LLM Erklärung - Modul 2: Tokenisierung | Navigation: <a href="01_einfuehrung.html">← Zurück</a> | <a href="03_embeddings.html">Nächstes Modul →</a></p>
+        </footer>
+    </div>
+</body>
+</html>
