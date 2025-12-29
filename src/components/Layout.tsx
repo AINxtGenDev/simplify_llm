@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Home, Sigma, Brain, Layers, Github } from 'lucide-react'
+import { Home, Sigma, Brain, Layers, Box, Github } from 'lucide-react'
 
 interface LayoutProps {
   children: ReactNode
@@ -12,6 +12,7 @@ const navItems = [
   { path: '/softmax', label: 'Softmax', icon: Sigma },
   { path: '/attention', label: 'Attention', icon: Brain },
   { path: '/transformer', label: 'Transformer', icon: Layers },
+  { path: '/tensor', label: 'Tensor', icon: Box },
 ]
 
 export function Layout({ children }: LayoutProps) {

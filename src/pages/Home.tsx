@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Brain, Sigma, Layers, Sparkles, BookOpen, Code2 } from 'lucide-react'
+import { ArrowRight, Brain, Sigma, Layers, Box, Sparkles, BookOpen, Code2 } from 'lucide-react'
 
 const features = [
   {
@@ -23,6 +23,13 @@ const features = [
     description: 'Entdecke den Aufbau moderner Large Language Models wie GPT und Claude.',
     gradient: 'from-emerald-500 to-teal-500',
     path: '/transformer',
+  },
+  {
+    icon: Box,
+    title: 'Tensoren & Hardware',
+    description: 'Erfahre, was Tensoren sind und warum GPUs und TPUs sie so schnell verarbeiten.',
+    gradient: 'from-amber-500 to-orange-500',
+    path: '/tensor',
   },
 ]
 
@@ -124,7 +131,7 @@ export function Home() {
           Schritt für Schritt durch die fundamentalen Konzepte moderner LLMs
         </motion.p>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature) => {
             const Icon = feature.icon
             return (
