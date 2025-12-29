@@ -50,9 +50,13 @@ The project automatically deploys to GitHub Pages via GitHub Actions on every pu
 
 ### Manual Deployment Setup
 
+**IMPORTANT: You must enable GitHub Pages in your repository settings:**
+
 1. Go to your repository **Settings** → **Pages**
-2. Under "Build and deployment", select **Source: GitHub Actions**
-3. Push to `main` branch - the workflow will automatically build and deploy
+2. Under "Build and deployment", select **Source: Deploy from a branch**
+3. Select **Branch: gh-pages** and **Folder: / (root)**
+4. Click **Save**
+5. Push to `main` branch - the workflow will automatically build and deploy to gh-pages
 
 ## Project Structure
 
